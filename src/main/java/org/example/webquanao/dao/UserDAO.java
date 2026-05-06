@@ -50,12 +50,24 @@ public class UserDAO {
                         .one()
         );
     }
+    public void updatePasswordAndUsername(User user) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("""
+            UPDATE users
+            SET password = :password,
+                username = :username
+            WHERE id = :id
+        """)
+                        .bindBean(user)
+                        .execute()
+        );
+    }
 
     public int insertGoogleUser(User user) {
         return jdbi.withHandle(handle ->
                 handle.createUpdate("""
-                INSERT INTO users(email, google_id, full_name)
-                VALUES(:email, :googleId, :fullName)
+                INSERT INTO users(email, google_id, full_name,active,verified)
+                VALUES(:email, :googleId, :fullName, :active,:verified)
             """)
                         .bindBean(user)
                         .executeAndReturnGeneratedKeys("id")
@@ -80,7 +92,7 @@ public class UserDAO {
     public void updateCodeActive(User user) {
         jdbi.useHandle(handle -> handle.createUpdate("""
         UPDATE users
-        SET is_verified = :active
+        SET verified = :active
         WHERE email = :email
     """)
                 .bind("email",user.getEmail())

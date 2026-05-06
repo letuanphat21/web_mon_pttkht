@@ -11,6 +11,12 @@ import java.io.IOException;
 
 @WebServlet(name = "RegisterController", value = "/register")
 public class RegisterController extends HttpServlet {
+    private AuthService authService;
+
+    @Override
+    public void init() {
+        authService = new AuthService();
+    }
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.getRequestDispatcher("/WEB-INF/register.jsp").forward(request, response);
@@ -22,7 +28,14 @@ public class RegisterController extends HttpServlet {
         String email = request.getParameter("email");
         String username = request.getParameter("username");
         String password = request.getParameter("password");
+        String password_again = request.getParameter("password_again");
         String fullname = request.getParameter("fullname");
+
+        if(!password.equals(password_again)) {
+            request.setAttribute("error","mật khẩu chưa chính xác");
+            request.getRequestDispatcher("/WEB-INF/register.jsp").forward(request, response);
+            return;
+        }
 
         // 2. Tạo object user
         User user = new User();
@@ -32,7 +45,6 @@ public class RegisterController extends HttpServlet {
         user.setFullName(fullname);
 
         // 3. Gọi service
-        AuthService authService = new AuthService();
         Result result = authService.registerUser(user);
 
         // 4. Xử lý kết quả

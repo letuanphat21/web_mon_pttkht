@@ -19,8 +19,16 @@ public class AuthService {
             return Result.fail("Tên đăng nhập đã tồn tại");
         }
         // 2. check email
-        if (userDAO.findByEmail(user.getEmail()) != null) {
-            return Result.fail("Email đã tồn tại");
+        User usermail = userDAO.findByEmail(user.getEmail());
+        if (usermail!= null) {
+            if(usermail.getGoogleId() != null) {
+                String hashed = PasswordUtil.hashPassword(user.getPassword());
+                user.setPassword(hashed);
+                userDAO.updatePasswordAndUsername(user);
+                return Result.ok("Đăng ký thành công", null);
+            }else{
+                return Result.fail("Email đã tồn tại");
+            }
         }
         // 3. hash password
         String hashed = PasswordUtil.hashPassword(user.getPassword());
@@ -33,8 +41,13 @@ public class AuthService {
         // Kiểm tra coi insert tài khoản vô database ổn khng
         try {
             userId = userDAO.insertUser(user);
-            userRoleDAO.addRoleToUser(userId, 1);
         } catch (Exception e) {
+            e.printStackTrace();
+            return Result.fail("Lỗi hệ thống khi tạo tài khoản");
+        }
+        try{
+            userRoleDAO.addRoleToUser(userId, 1);
+        }catch (Exception e) {
             e.printStackTrace();
             return Result.fail("Lỗi hệ thống khi tạo tài khoản");
         }
@@ -52,7 +65,7 @@ public class AuthService {
         } catch (Exception e) {
             e.printStackTrace();
 
-            return Result.fail("Đăng ký thành công nhưng gửi email thất bại");
+            return Result.fail(" gửi email xác nhận thất bại");
         }
         return Result.ok("Đăng ký thành công! Vui lòng kiểm tra email", null);
     }
@@ -67,6 +80,8 @@ public class AuthService {
             if (user.getCodeActive().equals(code)) {
                 user.setVerified(true);
                 userDAO.updateCodeActive(user);
+            }else {
+                return Result.fail("Kích hoạt tài khoản thất bại");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -142,7 +157,7 @@ public class AuthService {
             User newUser = new User();
             newUser.setEmail(email);
             newUser.setGoogleId(googleId);
-            newUser.setUsername(name);
+            newUser.setFullName(name);
             newUser.setActive(true);
             newUser.setVerified(true);
 
@@ -150,8 +165,10 @@ public class AuthService {
             userRoleDAO.addRoleToUser(userId, 1);
             newUser.setId(userId);
             Map<String, Object> data = new HashMap<String, Object>();
-            data.put("username", newUser.getUsername());
+            data.put("username", newUser.getFullName());
             data.put("email", newUser.getEmail());
+            List<String> roles = userRoleDAO.getRolesByUserId(newUser.getId());
+            data.put("roles", roles);
 
             return Result.ok("Đăng nhập Google thành công", data);
         }
@@ -178,7 +195,7 @@ public class AuthService {
         }
 
         Map<String, Object> data = new HashMap<String, Object>();
-        data.put("username", user.getUsername());
+        data.put("username", user.getFullName());
         data.put("email", user.getEmail());
         List<String> roles = userRoleDAO.getRolesByUserId(user.getId());
         data.put("roles", roles);
