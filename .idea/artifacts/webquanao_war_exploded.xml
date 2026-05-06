@@ -1,0 +1,28 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="webquanao:war exploded">
+    <output-path>$PROJECT_DIR$/out/artifacts/webquanao_war_exploded</output-path>
+    <root id="root">
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="webquanao" />
+        </element>
+        <element id="directory" name="lib">
+          <element id="library" level="project" name="Maven: javax.servlet:jstl:1.2" />
+          <element id="library" level="project" name="Maven: org.apache.httpcomponents.client5:httpclient5:5.2.1" />
+          <element id="library" level="project" name="Maven: org.apache.httpcomponents.core5:httpcore5-h2:5.2" />
+          <element id="library" level="project" name="Maven: org.slf4j:slf4j-api:1.7.36" />
+          <element id="library" level="project" name="Maven: org.apache.httpcomponents.core5:httpcore5:5.2.1" />
+          <element id="library" level="project" name="Maven: com.google.code.gson:gson:2.10.1" />
+          <element id="library" level="project" name="Maven: org.jdbi:jdbi3-core:3.43.0" />
+          <element id="library" level="project" name="Maven: io.leangen.geantyref:geantyref:1.3.14" />
+          <element id="library" level="project" name="Maven: com.mysql:mysql-connector-j:8.3.0" />
+          <element id="library" level="project" name="Maven: com.google.protobuf:protobuf-java:3.25.1" />
+          <element id="library" level="project" name="Maven: org.mindrot:jbcrypt:0.4" />
+          <element id="library" level="project" name="Maven: com.sun.mail:jakarta.mail:2.0.1" />
+          <element id="library" level="project" name="Maven: com.sun.activation:jakarta.activation:2.0.1" />
+        </element>
+      </element>
+      <element id="javaee-facet-resources" facet="webquanao/web/Web" />
+    </root>
+  </artifact>
+</component>
