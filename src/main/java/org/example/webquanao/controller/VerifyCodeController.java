@@ -10,12 +10,17 @@ import java.io.IOException;
 
 @WebServlet(name = "VerifyCodeController", value = "/verify")
 public class VerifyCodeController extends HttpServlet {
+    private AuthService authService;
+
+    @Override
+    public void init() {
+        authService = new AuthService();
+    }
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String code = request.getParameter("code");
         String email = request.getParameter("email");
-
-        AuthService authService = new AuthService();
+        
         Result result = authService.activeUser(email, code);
         if (result.isSuccess()) {
             request.setAttribute("message", result.getMessage());

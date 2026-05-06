@@ -31,11 +31,14 @@
     <div>Mật khẩu</div>
     <input type="password" name="password" placeholder="Nhập mật khẩu" required />
 
+    <div>Nhập lại mật khẩu</div>
+    <input type="password" name="password_again" placeholder="Nhập lại mật khẩu" required />
+
     <div>Email</div>
     <input type="email" name="email" placeholder="Nhập email" required />
 
     <div>Họ và tên</div>
-    <input type="text" name="fullname" placeholder="Nhập họ tên" />
+    <input type="text" name="fullname" placeholder="Nhập họ tên" required />
 
     <br><br>
     <button type="submit">Đăng ký</button>
