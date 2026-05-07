@@ -51,7 +51,8 @@ public class LoginController extends HttpServlet {
             boolean isAdmin = roles.stream().anyMatch(r -> r.equals("ADMIN"));
 
             if (isAdmin) {
-                request.getRequestDispatcher("/WEB-INF/managerCategory.jsp").forward(request, response);
+                session.setAttribute("roleId", 2);
+                response.sendRedirect(request.getContextPath() + "/admin/dashboard");
             } else {
                 response.sendRedirect(request.getContextPath() + "/shop");
             }
