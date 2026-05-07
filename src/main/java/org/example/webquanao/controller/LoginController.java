@@ -34,13 +34,14 @@ public class LoginController extends HttpServlet {
         if (result.isSuccess()) {
 
             // lấy user từ data
+            int userId = (int) result.getData().get("id");
             String username1 = (String) result.getData().get("username");
             String email = (String) result.getData().get("email");
             List<String> roles = (List<String>) result.getData().get("roles");
 
             // tạo session
             HttpSession session = request.getSession();
-
+            session.setAttribute("userId", userId);
             session.setAttribute("username", username1);
             session.setAttribute("email", email);
             session.setAttribute("roles", roles);
@@ -52,7 +53,7 @@ public class LoginController extends HttpServlet {
             if (isAdmin) {
                 request.getRequestDispatcher("/WEB-INF/managerCategory.jsp").forward(request, response);
             } else {
-                request.getRequestDispatcher("/WEB-INF/home.jsp").forward(request, response);
+                response.sendRedirect(request.getContextPath() + "/shop");
             }
 
         } else {

@@ -47,4 +47,31 @@ public class OrderDAO {
                         .orElse(null)
         );
     }
+
+    public List<Order> getOrdersByUserId(int userId) {
+        return getJdbi().withHandle(handle ->
+                handle.createQuery("SELECT * FROM orders WHERE user_id = :userId ORDER BY created_at DESC")
+                        .bind("userId", userId)
+                        .mapToBean(Order.class)
+                        .list()
+        );
+    }
+
+    public List<OrderDetail> getDetailsByOrderId(String orderId) {
+        return getJdbi().withHandle(handle ->
+                handle.createQuery("SELECT * FROM order_details WHERE order_id = :orderId")
+                        .bind("orderId", orderId)
+                        .mapToBean(OrderDetail.class)
+                        .list()
+        );
+    }
+
+    public boolean updateOrderStatus(String orderId, String status) {
+        return getJdbi().withHandle(handle ->
+                handle.createUpdate("UPDATE orders SET status = :status WHERE order_id = :id")
+                        .bind("status", status)
+                        .bind("id", orderId)
+                        .execute() > 0
+        );
+    }
 }

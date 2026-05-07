@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public class OrderService {
     private OrderDAO orderDAO = new OrderDAO();
-    
+
     public String validateShippingInfo(String phone, String address) {
         if (phone == null || !phone.matches("^0\\d{9}$")) {
             return "Số điện thoại không hợp lệ (Phải bắt đầu bằng 0 và gồm 10 chữ số).";
@@ -32,5 +32,30 @@ public class OrderService {
 
     public Order getOrderById(String orderId) {
         return orderDAO.findById(orderId);
+    }
+
+    public List<OrderDetail> getOrderDetails(String orderId) {
+        return orderDAO.getDetailsByOrderId(orderId);
+    }
+
+    public List<Order> getUserOrderHistory(int userId) {
+        return orderDAO.getOrdersByUserId(userId);
+    }
+
+    public String cancelOrder(String orderId, int userId) {
+        Order order = orderDAO.findById(orderId);
+
+        // NFR1.29-1. Kiểm tra quyền sở hữu đơn hàng
+        if (order == null || order.getUserId() != userId) {
+            return "Bạn không có quyền thực hiện thao tác này.";
+        }
+
+        // BR1.29-1 & E7a1. Chỉ cho phép hủy khi ở trạng thái "Chờ xác nhận"
+        if (!"Chờ xác nhận".equals(order.getStatus())) {
+            return "Đơn hàng đang trong quá trình xử lý hoặc vận chuyển, không thể hủy.";
+        }
+
+        boolean success = orderDAO.updateOrderStatus(orderId, "Đã hủy");
+        return success ? "SUCCESS" : "Lỗi hệ thống khi hủy đơn hàng.";
     }
 }
