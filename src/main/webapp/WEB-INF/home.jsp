@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page isELIgnored="false" %>
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
-
+<%@ taglib uri="jakarta.tags.fmt" prefix="fmt" %>
 <html>
 <head>
     <title>Trang chủ - Web Quần Áo</title>
@@ -25,7 +25,9 @@
             <div class="product-card" style="border: 1px solid #ddd; padding: 15px; width: 200px; border-radius: 8px;">
                 <img src="${p.productImage}" alt="${p.productName}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 4px;">
                 <h4 style="margin: 10px 0;">${p.productName}</h4>
-                <p style="color: #e44d26; font-weight: bold;">Giá: ${p.productPrice} VNĐ</p>
+                <p style="color: #e44d26; font-weight: bold;">
+                    Giá: <fmt:formatNumber value="${p.productPrice}" pattern="#,###"/> VNĐ
+                </p>
 
                 <div style="margin-top: 10px;">
                     <input type="number" id="qty-${p.productId}" value="1" min="1" style="width: 50px; padding: 5px;">

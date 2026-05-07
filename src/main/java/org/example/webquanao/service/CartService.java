@@ -27,4 +27,29 @@ public class CartService {
             cart.put(pId, newItem);
         }
     }
+
+    public void updateQuantity(Map<Integer, CartItem> cart, int productId, int quantity) {
+        if (cart.containsKey(productId)) {
+            // E5c1.1 & BR1.24-2. Nếu > 0 thì cập nhật
+            if (quantity > 0) {
+                CartItem item = cart.get(productId);
+                item.setQuantity(quantity);
+                item.calculateTotal(); // BR1.24-1
+            } else {
+                // E5c1.2. Nếu <= 0 thì xóa khỏi Session
+                removeFromCart(cart, productId);
+            }
+        }
+    }
+
+    public void removeFromCart(Map<Integer, CartItem> cart, int productId) {
+        if (cart != null) {
+            cart.remove(productId); // Luồng 5b4
+        }
+    }
+
+    public double calculateTotalCart(Map<Integer, CartItem> cart) {
+        if (cart == null) return 0;
+        return cart.values().stream().mapToDouble(CartItem::getTotalAmount).sum();
+    }
 }

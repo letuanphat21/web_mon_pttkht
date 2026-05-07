@@ -39,6 +39,91 @@ function addToCart(productId) {
         });
 }
 
+function updateQuantityAjax(productId, quantity) {
+    if (quantity <= 0) {
+        deleteItemAjax(productId);
+        return;
+    }
+
+    const params = new URLSearchParams();
+    params.append('action', 'update');
+    params.append('productId', productId);
+    params.append('quantity', quantity);
+
+    fetch('cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+    })
+        .then(response => {
+            if (!response.ok) return response.text().then(text => { throw new Error(text) });
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                const itemTotalElem = document.getElementById('total-item-' + productId);
+                if (itemTotalElem) {
+                    itemTotalElem.innerText = data.itemTotal.toLocaleString('vi-VN') + " VNĐ";
+                }
+
+                const cartTotalElem = document.getElementById('total-amount');
+                if (cartTotalElem) {
+                    cartTotalElem.innerText = data.cartTotal.toLocaleString('vi-VN');
+                }
+
+                if (data.isEmpty) location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Lỗi:', error);
+            alert("Có lỗi xảy ra khi cập nhật giỏ hàng.");
+        });
+}
+function deleteItemAjax(productId) {
+    if (!confirm("Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?")) {
+        location.reload();
+        return;
+    }
+
+    const params = new URLSearchParams();
+    params.append('action', 'delete');
+    params.append('productId', productId);
+
+    fetch('cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if (data.isEmpty) {
+                    location.reload();
+                    return;
+                }
+
+                const row = document.getElementById('row-' + productId);
+                if (row) {
+                    row.remove();
+                }
+
+                const cartTotalElem = document.getElementById('total-amount');
+                if (cartTotalElem) {
+                    cartTotalElem.innerText = data.cartTotal.toLocaleString('vi-VN');
+                }
+
+                const cartBadge = document.getElementById('cart-count');
+                if (cartBadge && data.totalQty !== undefined) {
+                    cartBadge.innerText = data.totalQty;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Lỗi xóa:', error);
+            alert("Không thể xóa sản phẩm.");
+        });
+}
+
 function showCartModal() {
     const modal = document.getElementById('cart-modal');
     modal.style.display = 'block';

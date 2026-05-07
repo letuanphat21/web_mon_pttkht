@@ -14,7 +14,7 @@
 
         <nav>
             <ul style="list-style: none; display: flex; gap: 20px; margin: 0;">
-                <li><a href="${pageContext.request.contextPath}/home">Trang chủ</a></li>
+                <li><a href="${pageContext.request.contextPath}/shop">Trang chủ</a></li>
                 <li><a href="#">Sản phẩm</a></li>
                 <li><a href="#">Liên hệ</a></li>
             </ul>
