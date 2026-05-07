@@ -77,8 +77,9 @@
                     <fmt:formatNumber value="${totalAmount}" pattern="#,###"/>
                 </span> VNĐ
                 <br><br>
-                <button onclick="location.href='checkout'" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                    Đặt hàng
+                <button onclick="location.href='${pageContext.request.contextPath}/order-process?action=checkout'"
+                        style="padding: 10px 25px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1.1em;">
+                    Đặt hàng ngay
                 </button>
             </div>
         </c:otherwise>

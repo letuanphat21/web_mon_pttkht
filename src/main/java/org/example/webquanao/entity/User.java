@@ -10,6 +10,8 @@ public class User {
     private String password;
     private String googleId;
     private String fullName;
+    private String phone;
+    private String address;
     private String avatar;
     private Timestamp createdAt;
     private boolean verified;
@@ -41,6 +43,22 @@ public class User {
 
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
 
     public String getAvatar() { return avatar; }
     public void setAvatar(String avatar) { this.avatar = avatar; }
