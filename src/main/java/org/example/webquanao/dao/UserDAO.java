@@ -18,15 +18,15 @@ public class UserDAO {
                         .orElse(null)
         );
     }
-    public User findByUsername(String username) {
-        return jdbi.withHandle(handle ->
-                handle.createQuery("SELECT * FROM users WHERE username = :username")
-                        .bind("username", username)
-                        .mapToBean(User.class)
-                        .findOne()
-                        .orElse(null)
-        );
-    }
+//    public User findByUsername(String username) {
+//        return jdbi.withHandle(handle ->
+//                handle.createQuery("SELECT * FROM users WHERE username = :username")
+//                        .bind("username", username)
+//                        .mapToBean(User.class)
+//                        .findOne()
+//                        .orElse(null)
+//        );
+//    }
 
     public User findByGoogleId(String googleId) {
         return jdbi.withHandle(handle ->
@@ -41,8 +41,8 @@ public class UserDAO {
     public int insertUser(User user) {
         return jdbi.withHandle(handle ->
                 handle.createUpdate("""
-                INSERT INTO users(email, username, password, full_name, avatar,code_active)
-                VALUES(:email, :username, :password, :fullName, :avatar,:codeActive)
+                INSERT INTO users(email, password, full_name, avatar,code_active)
+                VALUES(:email,  :password, :fullName, :avatar,:codeActive)
             """)
                         .bindBean(user)
                         .executeAndReturnGeneratedKeys("id")
@@ -66,8 +66,8 @@ public class UserDAO {
     public int insertGoogleUser(User user) {
         return jdbi.withHandle(handle ->
                 handle.createUpdate("""
-                INSERT INTO users(email, google_id, full_name,active,verified)
-                VALUES(:email, :googleId, :fullName, :active,:verified)
+                INSERT INTO users(email,password, google_id, full_name,active,verified)
+                VALUES(:email, :password,:googleId, :fullName, :active,:verified)
             """)
                         .bindBean(user)
                         .executeAndReturnGeneratedKeys("id")
@@ -127,8 +127,8 @@ public class UserDAO {
     }
 
     public static void main(String[] args) {
-        UserDAO userDAO = new UserDAO();
-        User user = userDAO.findByUsername("admin");
-        System.out.println(user);
+//        UserDAO userDAO = new UserDAO();
+//        User user = userDAO.findByUsername("admin");
+//        System.out.println(user);
     }
 }
