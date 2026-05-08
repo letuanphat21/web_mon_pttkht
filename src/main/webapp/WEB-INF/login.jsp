@@ -21,7 +21,7 @@
 <form action="login" method="post">
 
     <p>Tài khoản</p>
-    <input type="text" name="username" placeholder="Nhập tài khoản" required />
+    <input type="email" name="email" placeholder="Nhập email" required />
 
     <p>Mật khẩu</p>
     <input type="password" name="password" placeholder="Nhập mật khẩu" required />

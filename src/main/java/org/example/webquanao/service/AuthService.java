@@ -15,20 +15,20 @@ public class AuthService {
 
     public Result registerUser(User user) {
         // 1. check username
-        if (userDAO.findByUsername(user.getUsername()) != null) {
-            return Result.fail("Tên đăng nhập đã tồn tại");
-        }
+//        if (userDAO.findByUsername(user.getUsername()) != null) {
+//            return Result.fail("Tên đăng nhập đã tồn tại");
+//        }
         // 2. check email
         User usermail = userDAO.findByEmail(user.getEmail());
         if (usermail!= null) {
-            if(usermail.getGoogleId() != null) {
-                String hashed = PasswordUtil.hashPassword(user.getPassword());
-                user.setPassword(hashed);
-                userDAO.updatePasswordAndUsername(user);
-                return Result.ok("Đăng ký thành công", null);
-            }else{
+//            if(usermail.getGoogleId() != null) {
+//                String hashed = PasswordUtil.hashPassword(user.getPassword());
+//                user.setPassword(hashed);
+//                userDAO.updatePasswordAndUsername(user);
+//                return Result.ok("Đăng ký thành công", null);
+//            }else{
                 return Result.fail("Email đã tồn tại");
-            }
+//            }
         }
         // 3. hash password
         String hashed = PasswordUtil.hashPassword(user.getPassword());
@@ -56,7 +56,7 @@ public class AuthService {
         try {
             String link = "http://localhost:8080/verify?code=" + code + "&email=" + user.getEmail();
 
-            String content = "<h3>Xin chào " + user.getUsername() + "</h3>"
+            String content = "<h3>Xin chào " + user.getFullName() + "</h3>"
                     + "<p>Click để kích hoạt:</p>"
                     + "<a href='" + link + "'>Kích hoạt</a>";
 
@@ -90,10 +90,10 @@ public class AuthService {
         return Result.ok("Kích hoạt tài khoàn thành công", null);
     }
 
-    public Result login(String tenDangNhap, String password) {
+    public Result login(String email, String password) {
 
         // 1. Tìm user
-        User user = userDAO.findByUsername(tenDangNhap);
+        User user = userDAO.findByEmail(email);
 
         // không lộ tài khoản tồn tại hay không
         if (user == null) {
@@ -124,7 +124,7 @@ public class AuthService {
         }
 
         Map<String, Object> data = new HashMap<String, Object>();
-        data.put("username", user.getUsername());
+        data.put("username", user.getFullName());
         data.put("email", user.getEmail());
         List<String> roles = userRoleDAO.getRolesByUserId(user.getId());
         data.put("roles", roles);
@@ -161,6 +161,7 @@ public class AuthService {
             newUser.setFullName(name);
             newUser.setActive(true);
             newUser.setVerified(true);
+            newUser.setPassword(PasswordUtil.hashPassword("0000000"));
 
             int userId = userDAO.insertGoogleUser(newUser);
             userRoleDAO.addRoleToUser(userId, 1);

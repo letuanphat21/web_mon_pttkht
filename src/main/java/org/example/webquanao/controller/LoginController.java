@@ -24,7 +24,7 @@ public class LoginController extends HttpServlet {
         response.setContentType("text/html;charset=UTF-8");
 
         // 1. lấy data từ form
-        String username = request.getParameter("username");
+        String username = request.getParameter("email");
         String password = request.getParameter("password");
 
         // 3. gọi service

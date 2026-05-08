@@ -26,7 +26,7 @@ public class RegisterController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // 1. Lấy dữ liệu từ form
         String email = request.getParameter("email");
-        String username = request.getParameter("username");
+//        String username = request.getParameter("username");
         String password = request.getParameter("password");
         String password_again = request.getParameter("password_again");
         String fullname = request.getParameter("fullname");
@@ -40,7 +40,7 @@ public class RegisterController extends HttpServlet {
         // 2. Tạo object user
         User user = new User();
         user.setEmail(email);
-        user.setUsername(username);
+//        user.setUsername(username);
         user.setPassword(password);
         user.setFullName(fullname);
 
