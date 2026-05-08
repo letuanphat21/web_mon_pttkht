@@ -48,11 +48,17 @@ public class CategoryService {
     }
 
     public Result updateCategory(Category category) {
-        // try {
+        try {
 
-            Category existing = categoryDAO.findByName(category.getName());
+            Category existing = categoryDAO.findById(category.getId());
 
-            if (existing != null) {
+            if (existing == null) {
+                return Result.fail("Không tìm thấy danh mục");
+            }
+
+            Category ct = categoryDAO.findByName(category.getName());
+
+            if (ct != null && ct.getId() != category.getId()) {
                 return Result.fail("Tên danh mục đã tồn tại");
             }
 
@@ -63,10 +69,10 @@ public class CategoryService {
 
             return Result.ok("Cập nhật danh mục thành công", null);
 
-        // } catch (Exception e) {
-        //     e.printStackTrace();
-        //     return Result.fail("Cập nhật danh mục thất bại");
-        // }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.fail("Cập nhật danh mục thất bại");
+        }
     }
 
     public Result toggleCategoryStatus(int id) {
