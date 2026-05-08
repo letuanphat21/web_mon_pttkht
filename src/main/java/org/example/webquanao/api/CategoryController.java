@@ -12,7 +12,7 @@ import java.io.IOException;
 
 @WebServlet(name = "category_api", value = "/api/category")
 public class CategoryController extends HttpServlet {
-    private CategoryService categoryService
+    private CategoryService categoryService;
     private Gson gson;
 
     @Override
