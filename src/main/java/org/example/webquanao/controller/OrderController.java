@@ -25,34 +25,26 @@ public class OrderController extends HttpServlet {
 
         String action = request.getParameter("action");
         if ("checkout".equals(action)) {
-            prepareCheckout(request, response);
+            prepareCheckoutAjax(request, response);
         } else if ("review".equals(action)) {
             showReviewPage(request, response);
         } else {
-            response.sendRedirect(request.getContextPath() + "/shop");
+            response.sendRedirect(request.getContextPath() + "/cart");
         }
     }
 
-    private void prepareCheckout(HttpServletRequest request, HttpServletResponse response)
+    private void prepareCheckoutAjax(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         HttpSession session = request.getSession();
         Map<Integer, CartItem> cart = (Map<Integer, CartItem>) session.getAttribute("cart");
-
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
         if (cart == null || cart.isEmpty()) {
-            request.setAttribute("errorMessage", "Giỏ hàng của bạn đang trống!");
-            request.getRequestDispatcher("/WEB-INF/home.jsp").forward(request, response);
+            response.getWriter().write("{\"status\": \"error\", \"message\": \"Giỏ hàng của bạn đang trống!\"}");
             return;
         }
-
-        User user = (User) session.getAttribute("auth");
-        if (user != null) {
-            request.setAttribute("defaultName", user.getFullName());
-            request.setAttribute("defaultPhone", user.getPhone());
-            request.setAttribute("defaultAddress", user.getAddress());
-        }
-
-        request.getRequestDispatcher("/WEB-INF/order-info.jsp").forward(request, response);
+        response.getWriter().write("{\"status\": \"success\"}");
     }
 
     @Override
@@ -61,9 +53,8 @@ public class OrderController extends HttpServlet {
 
         HttpSession session = request.getSession();
         Map<Integer, CartItem> cart = (Map<Integer, CartItem>) session.getAttribute("cart");
-        User user = (User) session.getAttribute("auth");
 
-        // 7. Lấy dữ liệu từ Form nhập thông tin giao hàng
+        Integer uId = (Integer) session.getAttribute("userId");
         String name = request.getParameter("fullName");
         String phone = request.getParameter("phone");
         String address = request.getParameter("address");
@@ -76,12 +67,14 @@ public class OrderController extends HttpServlet {
             request.setAttribute("inputName", name);
             request.setAttribute("inputPhone", phone);
             request.setAttribute("inputAddress", address);
-            request.getRequestDispatcher("/WEB-INF/order-info.jsp").forward(request, response);
+            request.setAttribute("openOrderForm", true);
+
+            request.getRequestDispatcher("/cart.jsp").forward(request, response);
             return;
         }
 
         Order pendingOrder = new Order();
-        pendingOrder.setUserId(user != null ? user.getId() : 0);
+        pendingOrder.setUserId(uId != null ? uId : 0);
         pendingOrder.setFullName(name);
         pendingOrder.setPhone(phone);
         pendingOrder.setAddress(address);
@@ -96,7 +89,7 @@ public class OrderController extends HttpServlet {
         HttpSession session = request.getSession();
 
         if (session.getAttribute("pendingOrder") == null) {
-            response.sendRedirect(request.getContextPath() + "/order-process?action=checkout");
+            response.sendRedirect(request.getContextPath() + "/cart");
             return;
         }
         request.getRequestDispatcher("/WEB-INF/order-review.jsp").forward(request, response);
