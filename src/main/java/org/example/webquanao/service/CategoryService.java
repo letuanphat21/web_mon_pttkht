@@ -28,7 +28,11 @@ public class CategoryService {
     }
 
     public Result addCategory(Category category) {
+<<<<<<< HEAD
         // try {
+=======
+        try {
+>>>>>>> parent of b8b741b (revert)
 
             Category ct = categoryDAO.findByName(category.getName());
 
@@ -41,10 +45,17 @@ public class CategoryService {
 
             return Result.ok("Thêm danh mục thành công", null);
 
+<<<<<<< HEAD
         // } catch (Exception e) {
         //     e.printStackTrace();
         //     return Result.fail("Lỗi hệ thống khi thêm danh mục");
         // }
+=======
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.fail("Lỗi hệ thống khi thêm danh mục");
+        }
+>>>>>>> parent of b8b741b (revert)
     }
 
     public Result updateCategory(Category category) {
@@ -76,8 +87,13 @@ public class CategoryService {
     }
 
     public Result toggleCategoryStatus(int id) {
+<<<<<<< HEAD
         // try {
              Category existing = categoryDAO.findById(id);
+=======
+        try {
+            Category existing = categoryDAO.findById(id);
+>>>>>>> parent of b8b741b (revert)
             if (existing != null) {
                 if (existing.isActive()) {
                     categoryDAO.deactivate(id);
@@ -87,10 +103,17 @@ public class CategoryService {
                 return Result.ok("Thay đổi trạng thái thành công", null);
             }
             return Result.fail("Không tìm thấy danh mục");
+<<<<<<< HEAD
         // } catch (Exception e) {
         //     e.printStackTrace();
         //     return Result.fail("Thay đổi trạng thái thất bại");
         // }
+=======
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.fail("Thay đổi trạng thái thất bại");
+        }
+>>>>>>> parent of b8b741b (revert)
     }
 
 }

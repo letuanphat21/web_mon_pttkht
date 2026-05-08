@@ -5,9 +5,32 @@ import org.example.webquanao.entity.User;
 import org.jdbi.v3.core.Jdbi;
 
 import java.util.Date;
+import java.util.List;
 
 public class UserDAO {
     private Jdbi jdbi = DBConnect.get();
+
+    public List<User> findAll() {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                        SELECT *
+                        FROM users
+                        ORDER BY id DESC
+                """)
+                        .mapToBean(User.class)
+                        .list()
+        );
+    }
+
+    public User findById(int id) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("SELECT * FROM users WHERE id = :id")
+                        .bind("id", id)
+                        .mapToBean(User.class)
+                        .findOne()
+                        .orElse(null)
+        );
+    }
 
     public User findByEmail(String email) {
         return jdbi.withHandle(handle ->
@@ -50,6 +73,68 @@ public class UserDAO {
                         .one()
         );
     }
+
+    public int insertManagedUser(User user) {
+        return jdbi.withHandle(handle ->
+                handle.createUpdate("""
+                        INSERT INTO users(email, password, full_name, phone, address, active, verified)
+                        VALUES(:email, :password, :fullName, :phone, :address, :active, :verified)
+                """)
+                        .bindBean(user)
+                        .executeAndReturnGeneratedKeys("id")
+                        .mapTo(int.class)
+                        .one()
+        );
+    }
+
+    public void updateManagedUser(User user) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("""
+                        UPDATE users
+                        SET email = :email,
+                            full_name = :fullName,
+                            phone = :phone,
+                            address = :address,
+                            active = :active,
+                            verified = :verified
+                        WHERE id = :id
+                """)
+                        .bindBean(user)
+                        .execute()
+        );
+    }
+
+    public void updateManagedUserWithPassword(User user) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("""
+                        UPDATE users
+                        SET email = :email,
+                            password = :password,
+                            full_name = :fullName,
+                            phone = :phone,
+                            address = :address,
+                            active = :active,
+                            verified = :verified
+                        WHERE id = :id
+                """)
+                        .bindBean(user)
+                        .execute()
+        );
+    }
+
+    public void updateActive(int id, boolean active) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("""
+                        UPDATE users
+                        SET active = :active
+                        WHERE id = :id
+                """)
+                        .bind("active", active)
+                        .bind("id", id)
+                        .execute()
+        );
+    }
+
     public void updatePasswordAndUsername(User user) {
         jdbi.useHandle(handle ->
                 handle.createUpdate("""
