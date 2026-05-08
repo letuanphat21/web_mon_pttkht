@@ -42,7 +42,7 @@ public class OrderDAO {
         return getJdbi().withHandle(handle ->
                 handle.createQuery("SELECT * FROM orders WHERE order_id = :id")
                         .bind("id", orderId)
-                        .mapToBean(Order.class)
+                        .map(org.jdbi.v3.core.mapper.reflect.BeanMapper.of(Order.class))
                         .findOne()
                         .orElse(null)
         );
@@ -52,7 +52,7 @@ public class OrderDAO {
         return getJdbi().withHandle(handle ->
                 handle.createQuery("SELECT * FROM orders WHERE user_id = :userId ORDER BY created_at DESC")
                         .bind("userId", userId)
-                        .mapToBean(Order.class)
+                        .map(org.jdbi.v3.core.mapper.reflect.BeanMapper.of(Order.class))
                         .list()
         );
     }
@@ -61,7 +61,7 @@ public class OrderDAO {
         return getJdbi().withHandle(handle ->
                 handle.createQuery("SELECT * FROM order_details WHERE order_id = :orderId")
                         .bind("orderId", orderId)
-                        .mapToBean(OrderDetail.class)
+                        .map(org.jdbi.v3.core.mapper.reflect.BeanMapper.of(OrderDetail.class))
                         .list()
         );
     }

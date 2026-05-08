@@ -124,6 +124,40 @@ function deleteItemAjax(productId) {
         });
 }
 
+function proceedToCheckout(event) {
+    if (event) event.preventDefault();
+
+    console.log("Đang kiểm tra giỏ hàng trước khi hiện form thanh toán...");
+
+    const contextPath = window.location.pathname.substring(0, window.location.pathname.indexOf("/", 1));
+    const url = (contextPath === "/" ? "" : contextPath) + '/order-process?action=checkout';
+
+    fetch(url, {
+        method: 'GET',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+        .then(response => {
+            if (!response.ok) throw new Error('Lỗi server: ' + response.status);
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('cart-container').style.display = 'none';
+                const infoContainer = document.getElementById('order-info-container');
+                infoContainer.style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                console.log("Đã chuyển sang chế độ nhập thông tin giao hàng.");
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Lỗi Ajax:', error);
+            alert("Có lỗi xảy ra, vui lòng thử lại.");
+        });
+}
+
 function showCartModal() {
     const modal = document.getElementById('cart-modal');
     modal.style.display = 'block';

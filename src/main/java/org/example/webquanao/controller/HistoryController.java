@@ -7,9 +7,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.example.webquanao.entity.Order;
+import org.example.webquanao.entity.OrderDetail;
 import org.example.webquanao.service.OrderService;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 
 @WebServlet("/order-history")
@@ -21,26 +23,30 @@ public class HistoryController extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession();
-        Integer userId = (Integer) session.getAttribute("userId");
+        Object userIdObj = session.getAttribute("userId");
 
-        if (userId == null) {
+        if (userIdObj == null) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
+
+        int userId = Integer.parseInt(userIdObj.toString());
 
         String action = request.getParameter("action");
         String orderId = request.getParameter("id");
 
         if ("detail".equals(action) && orderId != null) {
             Order order = orderService.getOrderById(orderId);
+            List<OrderDetail> details = orderService.getOrderDetails(orderId);
 
-            // NFR1.29-1.  So sánh id chủ đơn hàng với id trong session
+
             if (order != null && order.getUserId() == userId) {
                 request.setAttribute("order", order);
-                request.setAttribute("details", orderService.getOrderDetails(orderId));
+                request.setAttribute("details", details);
                 request.getRequestDispatcher("/WEB-INF/order-detail.jsp").forward(request, response);
             } else {
-                response.sendRedirect("order-history");
+                System.out.println("CẢNH BÁO: Sai UserId hoặc Order Null -> Trả về 403");
+                response.sendError(HttpServletResponse.SC_FORBIDDEN);
             }
         } else {
             List<Order> orders = orderService.getUserOrderHistory(userId);
@@ -53,21 +59,35 @@ public class HistoryController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
         HttpSession session = request.getSession();
-        Integer userId = (Integer) session.getAttribute("userId");
+        Object userIdObj = session.getAttribute("userId");
         String action = request.getParameter("action");
         String orderId = request.getParameter("orderId");
 
-        if ("cancel".equals(action) && userId != null && orderId != null) {
+        PrintWriter out = response.getWriter();
+
+        if (userIdObj == null) {
+            out.write("{\"status\": \"error\", \"message\": \"Phiên làm việc hết hạn.\"}");
+            return;
+        }
+
+        int userId = Integer.parseInt(userIdObj.toString());
+
+        if ("cancel".equals(action) && orderId != null) {
             String result = orderService.cancelOrder(orderId, userId);
+
             if ("SUCCESS".equals(result)) {
-                session.setAttribute("message", "Hủy đơn hàng " + orderId + " thành công!");
+                out.write("{\"status\": \"success\"}");
             } else {
-                session.setAttribute("error", result);
+                out.write("{\"status\": \"error\", \"message\": \"" + result + "\"}");
             }
         } else {
-            session.setAttribute("error", "Không thể xác định danh tính hoặc đơn hàng.");
+            out.write("{\"status\": \"error\", \"message\": \"Yêu cầu không hợp lệ.\"}");
         }
-        response.sendRedirect(request.getContextPath() + "/order-history");
+
+        out.flush(); // Đẩy dữ liệu đi và kết thúc response tại đây
     }
 }
