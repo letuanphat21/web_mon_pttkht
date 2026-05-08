@@ -16,6 +16,9 @@
 <br/>
 <a href="register">Register</a>
 
+<h1>Chào mừng đến với Web Quần Áo</h1>
+<a href="${pageContext.request.contextPath}/shop">Vào xem cửa hàng</a>
+
 </body>
     <script>
         const divElement = document.querySelector(".hello")

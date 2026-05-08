@@ -128,6 +128,7 @@ public class AuthService {
         data.put("email", user.getEmail());
         List<String> roles = userRoleDAO.getRolesByUserId(user.getId());
         data.put("roles", roles);
+        data.put("id", user.getId());
 
         // 6. Login thành công → reset fail count
         userDAO.updateFailedAttemptsAndLock(user.getId(), 0, null);
@@ -170,6 +171,7 @@ public class AuthService {
             data.put("email", newUser.getEmail());
             List<String> roles = userRoleDAO.getRolesByUserId(newUser.getId());
             data.put("roles", roles);
+            data.put("id", user.getId());
 
             return Result.ok("Đăng nhập Google thành công", data);
         }
