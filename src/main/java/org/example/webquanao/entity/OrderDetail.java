@@ -1,9 +1,12 @@
 package org.example.webquanao.entity;
 
+import org.jdbi.v3.core.mapper.reflect.ColumnName;
+
 public class OrderDetail {
     private int id;
     private String orderId;
     private int productId;
+
     private int quantity;
     private double price;
 
