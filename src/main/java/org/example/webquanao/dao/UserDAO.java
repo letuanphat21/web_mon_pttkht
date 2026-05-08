@@ -211,6 +211,21 @@ public class UserDAO {
         );
     }
 
+    public void updatePassword(int userId, String hashedPassword) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("""
+                        UPDATE users
+                        SET password = :password,
+                            failed_attempts = 0,
+                            lock_until = NULL
+                        WHERE id = :id
+                """)
+                        .bind("password", hashedPassword)
+                        .bind("id", userId)
+                        .execute()
+        );
+    }
+
     public static void main(String[] args) {
 //        UserDAO userDAO = new UserDAO();
 //        User user = userDAO.findByUsername("admin");

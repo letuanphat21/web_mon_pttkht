@@ -12,65 +12,50 @@ public class CategoryService {
 
     private CategoryDAO categoryDAO = new CategoryDAO();
 
-
     public Result getAllCategory() {
-        Map<String,Object> data = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
 
-        try{
+        try {
             List<Category> categorys = categoryDAO.findAll();
-            data.put("categorys",categorys);
-        }catch (Exception e){
+            data.put("categorys", categorys);
+        } catch (Exception e) {
             e.printStackTrace();
-            return Result.fail("Lấy danh sách thất bại");
+            return Result.fail("Lay danh sach that bai");
         }
 
-        return Result.ok("Lấy danh sách thành công ", data);
+        return Result.ok("Lay danh sach thanh cong", data);
     }
 
     public Result addCategory(Category category) {
-<<<<<<< HEAD
-        // try {
-=======
         try {
->>>>>>> parent of b8b741b (revert)
-
             Category ct = categoryDAO.findByName(category.getName());
 
             if (ct != null) {
-                return Result.fail("Tên danh mục đã tồn tại");
+                return Result.fail("Ten danh muc da ton tai");
             }
 
             category.setActive(true);
             categoryDAO.insert(category);
 
-            return Result.ok("Thêm danh mục thành công", null);
-
-<<<<<<< HEAD
-        // } catch (Exception e) {
-        //     e.printStackTrace();
-        //     return Result.fail("Lỗi hệ thống khi thêm danh mục");
-        // }
-=======
+            return Result.ok("Them danh muc thanh cong", null);
         } catch (Exception e) {
             e.printStackTrace();
-            return Result.fail("Lỗi hệ thống khi thêm danh mục");
+            return Result.fail("Loi he thong khi them danh muc");
         }
->>>>>>> parent of b8b741b (revert)
     }
 
     public Result updateCategory(Category category) {
         try {
-
             Category existing = categoryDAO.findById(category.getId());
 
             if (existing == null) {
-                return Result.fail("Không tìm thấy danh mục");
+                return Result.fail("Khong tim thay danh muc");
             }
 
             Category ct = categoryDAO.findByName(category.getName());
 
             if (ct != null && ct.getId() != category.getId()) {
-                return Result.fail("Tên danh mục đã tồn tại");
+                return Result.fail("Ten danh muc da ton tai");
             }
 
             existing.setName(category.getName());
@@ -78,42 +63,28 @@ public class CategoryService {
 
             categoryDAO.update(existing);
 
-            return Result.ok("Cập nhật danh mục thành công", null);
-
+            return Result.ok("Cap nhat danh muc thanh cong", null);
         } catch (Exception e) {
             e.printStackTrace();
-            return Result.fail("Cập nhật danh mục thất bại");
+            return Result.fail("Cap nhat danh muc that bai");
         }
     }
 
     public Result toggleCategoryStatus(int id) {
-<<<<<<< HEAD
-        // try {
-             Category existing = categoryDAO.findById(id);
-=======
         try {
             Category existing = categoryDAO.findById(id);
->>>>>>> parent of b8b741b (revert)
             if (existing != null) {
                 if (existing.isActive()) {
                     categoryDAO.deactivate(id);
                 } else {
                     categoryDAO.activate(id);
                 }
-                return Result.ok("Thay đổi trạng thái thành công", null);
+                return Result.ok("Thay doi trang thai thanh cong", null);
             }
-            return Result.fail("Không tìm thấy danh mục");
-<<<<<<< HEAD
-        // } catch (Exception e) {
-        //     e.printStackTrace();
-        //     return Result.fail("Thay đổi trạng thái thất bại");
-        // }
-=======
+            return Result.fail("Khong tim thay danh muc");
         } catch (Exception e) {
             e.printStackTrace();
-            return Result.fail("Thay đổi trạng thái thất bại");
+            return Result.fail("Thay doi trang thai that bai");
         }
->>>>>>> parent of b8b741b (revert)
     }
-
 }

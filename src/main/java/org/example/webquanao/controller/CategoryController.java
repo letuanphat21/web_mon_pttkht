@@ -1,8 +1,11 @@
 package org.example.webquanao.controller;
 
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
-import jakarta.servlet.annotation.*;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.example.webquanao.action.Result;
 import org.example.webquanao.entity.Category;
 import org.example.webquanao.service.CategoryService;
@@ -17,12 +20,10 @@ public class CategoryController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();
-        if (session.getAttribute("roleId") == null || (int)session.getAttribute("roleId") != 2) {
+        if (session.getAttribute("roleId") == null || (int) session.getAttribute("roleId") != 2) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
-<<<<<<< HEAD
-=======
 
         Result result = categoryService.getAllCategory();
 
@@ -32,15 +33,12 @@ public class CategoryController extends HttpServlet {
         } else {
             request.setAttribute("error", result.getMessage());
         }
->>>>>>> parent of b8b741b (revert)
+
         request.getRequestDispatcher("/WEB-INF/admin/managerCategory.jsp").forward(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-<<<<<<< HEAD
-      
-=======
         String action = request.getParameter("action");
         String idParam = request.getParameter("id");
 
@@ -48,7 +46,7 @@ public class CategoryController extends HttpServlet {
             int id = Integer.parseInt(idParam);
             categoryService.toggleCategoryStatus(id);
         }
+
         response.sendRedirect(request.getContextPath() + "/admin/managerCategory");
->>>>>>> parent of b8b741b (revert)
     }
 }
