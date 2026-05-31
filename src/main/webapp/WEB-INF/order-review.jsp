@@ -20,7 +20,9 @@
                     <p><strong>Người nhận:</strong> ${sessionScope.pendingOrder.fullName}</p>
                     <p><strong>Số điện thoại:</strong> ${sessionScope.pendingOrder.phone}</p>
                     <p><strong>Địa chỉ:</strong> ${sessionScope.pendingOrder.address}</p>
-                    <a href="order-process?action=checkout" class="btn btn-sm btn-outline-primary">Chỉnh sửa thông tin</a>
+                    <a href="${pageContext.request.contextPath}/cart?edit=true" class="btn btn-sm btn-outline-primary">
+                        Chỉnh sửa thông tin
+                    </a>
                 </div>
             </div>
         </div>
