@@ -19,7 +19,25 @@ public class UserRoleDAO {
                         .execute()
         );
     }
-    // 2. lấy tất cả role theo userId
+    public void replaceRolesForUser(int userId, List<Integer> roleIds) {
+        jdbi.useTransaction(handle -> {
+            handle.createUpdate("DELETE FROM user_roles WHERE user_id = :uid")
+                    .bind("uid", userId)
+                    .execute();
+
+            for (Integer roleId : roleIds) {
+                handle.createUpdate("""
+                        INSERT INTO user_roles(user_id, role_id)
+                        VALUES(:uid, :rid)
+                """)
+                        .bind("uid", userId)
+                        .bind("rid", roleId)
+                        .execute();
+            }
+        });
+    }
+
+    // Lay tat ca ten role theo userId de luu vao session sau khi dang nhap.
     public List<String> getRolesByUserId(int userId) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
