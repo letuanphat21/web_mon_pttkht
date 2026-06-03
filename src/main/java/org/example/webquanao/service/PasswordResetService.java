@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -45,7 +46,7 @@ public class PasswordResetService {
             return Result.fail("Tài khoản của bạn đang bị khóa, không thể đặt lại mật khẩu lúc này");
         }
 
-        if (user.getLockUntil() != null && user.getLockUntil().after(new java.util.Date())) {
+        if (user.getLockUntil() != null && user.getLockUntil().isAfter(LocalDateTime.now())){
             return Result.fail("Tài khoản của bạn đang bị khóa đến " + user.getLockUntil());
         }
 

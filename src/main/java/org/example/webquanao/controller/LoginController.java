@@ -13,6 +13,12 @@ import java.util.List;
 
 @WebServlet(name = "LoginController", value = "/login")
 public class LoginController extends HttpServlet {
+    private AuthService authService;
+
+    @Override
+    public void init() {
+        authService = new AuthService();
+    }
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
@@ -28,7 +34,6 @@ public class LoginController extends HttpServlet {
         String password = request.getParameter("password");
 
         // 3. gọi service
-        AuthService authService = new AuthService();
         Result result = authService.login(username, password);
 
         if (result.isSuccess()) {

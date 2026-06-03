@@ -4,7 +4,8 @@ import org.example.webquanao.db.DBConnect;
 import org.example.webquanao.entity.User;
 import org.jdbi.v3.core.Jdbi;
 
-import java.util.Date;
+import java.time.LocalDateTime;
+
 import java.util.List;
 
 public class UserDAO {
@@ -184,7 +185,7 @@ public class UserDAO {
                 .bind("active", user.isVerified())
                 .execute());
     }
-    public void updateFailedAttemptsAndLock(int userId, int attempts, Date lockUntil) {
+    public void updateFailedAttemptsAndLock(int userId, int attempts, LocalDateTime lockUntil) {
         jdbi.useHandle(handle ->
                 handle.createUpdate("""
             UPDATE users
