@@ -4,7 +4,7 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 import org.example.webquanao.action.Result;
-import org.example.webquanao.dto.RegisterDTO;
+import org.example.webquanao.dto.request.RegisterRequest;
 import org.example.webquanao.service.AuthService;
 
 import java.io.IOException;
@@ -38,14 +38,14 @@ public class RegisterController extends HttpServlet {
         }
 
         // 2. Tạo object DTO
-        RegisterDTO registerDTO = new RegisterDTO();
-        registerDTO.setEmail(email);
-        registerDTO.setPassword(password);
-        registerDTO.setPasswordAgain(password_again);
-        registerDTO.setFullName(fullname);
+        RegisterRequest registerRequest = new RegisterRequest();
+        registerRequest.setEmail(email);
+        registerRequest.setPassword(password);
+        registerRequest.setPasswordAgain(password_again);
+        registerRequest.setFullName(fullname);
 
         // 3. Gọi service với DTO
-        Result result = authService.registerUser(registerDTO);
+        Result result = authService.registerUser(registerRequest);
 
         // 4. Xử lý kết quả
         if (result.isSuccess()) {
