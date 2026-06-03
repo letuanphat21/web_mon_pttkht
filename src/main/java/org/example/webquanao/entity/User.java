@@ -17,6 +17,7 @@ public class User {
     private LocalDateTime createdAt;
     private boolean verified;
     private String codeActive;
+    private LocalDateTime codeActiveCreatedAt;
     private boolean active;
     private int failedAttempts;
     private LocalDateTime lockUntil;
@@ -82,6 +83,14 @@ public class User {
 
     public void setCodeActive(String codeActive) {
         this.codeActive = codeActive;
+    }
+
+    public LocalDateTime getCodeActiveCreatedAt() {
+        return codeActiveCreatedAt;
+    }
+
+    public void setCodeActiveCreatedAt(LocalDateTime codeActiveCreatedAt) {
+        this.codeActiveCreatedAt = codeActiveCreatedAt;
     }
 
 

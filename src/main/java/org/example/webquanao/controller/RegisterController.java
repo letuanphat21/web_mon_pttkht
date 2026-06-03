@@ -4,7 +4,7 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 import org.example.webquanao.action.Result;
-import org.example.webquanao.entity.User;
+import org.example.webquanao.dto.RegisterDTO;
 import org.example.webquanao.service.AuthService;
 
 import java.io.IOException;
@@ -37,15 +37,15 @@ public class RegisterController extends HttpServlet {
             return;
         }
 
-        // 2. Tạo object user
-        User user = new User();
-        user.setEmail(email);
-//        user.setUsername(username);
-        user.setPassword(password);
-        user.setFullName(fullname);
+        // 2. Tạo object DTO
+        RegisterDTO registerDTO = new RegisterDTO();
+        registerDTO.setEmail(email);
+        registerDTO.setPassword(password);
+        registerDTO.setPasswordAgain(password_again);
+        registerDTO.setFullName(fullname);
 
-        // 3. Gọi service
-        Result result = authService.registerUser(user);
+        // 3. Gọi service với DTO
+        Result result = authService.registerUser(registerDTO);
 
         // 4. Xử lý kết quả
         if (result.isSuccess()) {

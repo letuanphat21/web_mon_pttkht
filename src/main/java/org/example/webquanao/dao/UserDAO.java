@@ -65,8 +65,8 @@ public class UserDAO {
     public int insertUser(User user) {
         return jdbi.withHandle(handle ->
                 handle.createUpdate("""
-                INSERT INTO users(email, password, full_name, avatar,code_active)
-                VALUES(:email,  :password, :fullName, :avatar,:codeActive)
+                INSERT INTO users(email, password, full_name, avatar, code_active)
+                VALUES(:email, :password, :fullName, :avatar, :codeActive)
             """)
                         .bindBean(user)
                         .executeAndReturnGeneratedKeys("id")
@@ -183,6 +183,17 @@ public class UserDAO {
     """)
                 .bind("email",user.getEmail())
                 .bind("active", user.isVerified())
+                .execute());
+    }
+
+    public void updateCodeActiveAndTime(User user) {
+        jdbi.useHandle(handle -> handle.createUpdate("""
+        UPDATE users
+        SET code_active = :codeActive,
+            code_active_created_at = :codeActiveCreatedAt
+        WHERE email = :email
+    """)
+                .bindBean(user)
                 .execute());
     }
     public void updateFailedAttemptsAndLock(int userId, int attempts, LocalDateTime lockUntil) {
