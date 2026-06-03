@@ -1,6 +1,7 @@
 package org.example.webquanao.dao;
 
 import org.example.webquanao.db.DBConnect;
+import org.example.webquanao.dto.response.StatisticRowResponse;
 import org.jdbi.v3.core.Jdbi;
 
 import java.sql.Timestamp;
@@ -61,7 +62,7 @@ public class StatisticsDAO {
         });
     }
 
-    public List<Map<String, Object>> getDailyRevenue(Timestamp startAt, Timestamp endAt, Integer categoryId) {
+    public List<StatisticRowResponse> getDailyRevenue(Timestamp startAt, Timestamp endAt, Integer categoryId) {
         String amountExpression = categoryId == null ? "o.total_price" : "od.quantity * od.price";
         String detailJoin = categoryId == null ? "" : " JOIN order_details od ON od.order_id = o.order_id JOIN products p ON p.productId = od.product_id ";
         String categoryFilter = categoryId == null ? "" : " AND p.categoryId = :categoryId ";
@@ -89,16 +90,16 @@ public class StatisticsDAO {
             }
 
             return query.map((rs, ctx) -> {
-                Map<String, Object> row = new LinkedHashMap<>();
-                row.put("label", rs.getString("report_date"));
-                row.put("orderCount", rs.getInt("order_count"));
-                row.put("revenue", rs.getDouble("revenue"));
+                StatisticRowResponse row = new StatisticRowResponse();
+                row.setLabel(rs.getString("report_date"));
+                row.setOrderCount(rs.getInt("order_count"));
+                row.setRevenue(rs.getDouble("revenue"));
                 return row;
             }).list();
         });
     }
 
-    public List<Map<String, Object>> getTopProducts(Timestamp startAt, Timestamp endAt, Integer categoryId) {
+    public List<StatisticRowResponse> getTopProducts(Timestamp startAt, Timestamp endAt, Integer categoryId) {
         String categoryFilter = categoryId == null ? "" : " AND p.categoryId = :categoryId ";
 
         return jdbi.withHandle(handle -> {
@@ -129,18 +130,18 @@ public class StatisticsDAO {
             }
 
             return query.map((rs, ctx) -> {
-                Map<String, Object> row = new LinkedHashMap<>();
-                row.put("productId", rs.getInt("product_id"));
-                row.put("productName", rs.getString("product_name"));
-                row.put("categoryName", rs.getString("category_name"));
-                row.put("soldQuantity", rs.getInt("sold_quantity"));
-                row.put("revenue", rs.getDouble("revenue"));
+                StatisticRowResponse row = new StatisticRowResponse();
+                row.setProductId(rs.getInt("product_id"));
+                row.setProductName(rs.getString("product_name"));
+                row.setCategoryName(rs.getString("category_name"));
+                row.setSoldQuantity(rs.getInt("sold_quantity"));
+                row.setRevenue(rs.getDouble("revenue"));
                 return row;
             }).list();
         });
     }
 
-    public List<Map<String, Object>> getRevenueByCategory(Timestamp startAt, Timestamp endAt, Integer categoryId) {
+    public List<StatisticRowResponse> getRevenueByCategory(Timestamp startAt, Timestamp endAt, Integer categoryId) {
         String categoryFilter = categoryId == null ? "" : " AND p.categoryId = :categoryId ";
 
         return jdbi.withHandle(handle -> {
@@ -168,16 +169,16 @@ public class StatisticsDAO {
             }
 
             return query.map((rs, ctx) -> {
-                Map<String, Object> row = new LinkedHashMap<>();
-                row.put("categoryName", rs.getString("category_name"));
-                row.put("soldQuantity", rs.getInt("sold_quantity"));
-                row.put("revenue", rs.getDouble("revenue"));
+                StatisticRowResponse row = new StatisticRowResponse();
+                row.setCategoryName(rs.getString("category_name"));
+                row.setSoldQuantity(rs.getInt("sold_quantity"));
+                row.setRevenue(rs.getDouble("revenue"));
                 return row;
             }).list();
         });
     }
 
-    public List<Map<String, Object>> getOrderStatusCounts(Timestamp startAt, Timestamp endAt) {
+    public List<StatisticRowResponse> getOrderStatusCounts(Timestamp startAt, Timestamp endAt) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
                         SELECT status, COUNT(*) AS order_count
@@ -190,9 +191,9 @@ public class StatisticsDAO {
                         .bind("startAt", startAt)
                         .bind("endAt", endAt)
                         .map((rs, ctx) -> {
-                            Map<String, Object> row = new LinkedHashMap<>();
-                            row.put("status", rs.getString("status"));
-                            row.put("orderCount", rs.getInt("order_count"));
+                            StatisticRowResponse row = new StatisticRowResponse();
+                            row.setStatus(rs.getString("status"));
+                            row.setOrderCount(rs.getInt("order_count"));
                             return row;
                         })
                         .list()

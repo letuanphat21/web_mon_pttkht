@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.example.webquanao.action.Result;
+import org.example.webquanao.dto.request.PasswordResetRequest;
 import org.example.webquanao.service.PasswordResetService;
 
 import java.io.IOException;
@@ -42,9 +43,11 @@ public class VerifyResetCodeController extends HttpServlet {
 
         HttpSession session = request.getSession(false);
         String email = session == null ? null : (String) session.getAttribute("pendingResetEmail");
-        String otp = request.getParameter("otp");
+        PasswordResetRequest resetRequest = new PasswordResetRequest();
+        resetRequest.setEmail(email);
+        resetRequest.setOtp(request.getParameter("otp"));
 
-        Result result = passwordResetService.verifyOtp(email, otp);
+        Result result = passwordResetService.verifyOtp(resetRequest);
         if (result.isSuccess()) {
             request.getSession().setAttribute("resetPasswordEmail", result.getData().get("email"));
             request.setAttribute("email", result.getData().get("email"));

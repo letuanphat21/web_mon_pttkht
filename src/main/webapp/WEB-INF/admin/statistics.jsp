@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -226,7 +226,7 @@
 </div>
 
 <script>
-    const chartData = ${chartJson};
+    const chartData = <c:out value="${chartJson}" default="{}" escapeXml="false"/>;
     const currencyFormatter = new Intl.NumberFormat('vi-VN');
 
     function renderChart(id, type, labels, values, label, color) {
@@ -236,10 +236,10 @@
         new Chart(element, {
             type: type,
             data: {
-                labels: labels,
+                labels: labels || [],
                 datasets: [{
                     label: label,
-                    data: values,
+                    data: values || [],
                     backgroundColor: color,
                     borderColor: color,
                     tension: 0.25

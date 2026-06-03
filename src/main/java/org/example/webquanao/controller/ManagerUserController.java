@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.example.webquanao.action.Result;
-import org.example.webquanao.entity.User;
+import org.example.webquanao.dto.request.UserRequest;
 import org.example.webquanao.service.UserService;
 
 import java.io.IOException;
@@ -51,9 +51,9 @@ public class ManagerUserController extends HttpServlet {
 
         // Controller chi dieu phoi request theo activity. Nghiep vu/kiem tra du lieu nam trong UserService.
         if ("add".equals(action)) {
-            result = userService.addUser(buildUserFromRequest(request, false), getRoleIds(request));
+            result = userService.addUser(buildUserRequest(request, false));
         } else if ("update".equals(action)) {
-            result = userService.updateUser(buildUserFromRequest(request, true), getRoleIds(request));
+            result = userService.updateUser(buildUserRequest(request, true));
         } else if ("toggleLock".equals(action)) {
             result = userService.toggleUserLock(parseInt(request.getParameter("id")), getCurrentAdminId(session));
         } else {
@@ -69,8 +69,8 @@ public class ManagerUserController extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/admin/managerUser");
     }
 
-    private User buildUserFromRequest(HttpServletRequest request, boolean includeId) {
-        User user = new User();
+    private UserRequest buildUserRequest(HttpServletRequest request, boolean includeId) {
+        UserRequest user = new UserRequest();
         if (includeId) {
             user.setId(parseInt(request.getParameter("id")));
         }
@@ -79,6 +79,7 @@ public class ManagerUserController extends HttpServlet {
         user.setPassword(request.getParameter("password"));
         user.setPhone(request.getParameter("phone"));
         user.setAddress(request.getParameter("address"));
+        user.setRoleIds(getRoleIds(request));
         return user;
     }
 

@@ -4,6 +4,8 @@ import org.example.webquanao.action.Result;
 import org.example.webquanao.dao.RoleDAO;
 import org.example.webquanao.dao.UserDAO;
 import org.example.webquanao.dao.UserRoleDAO;
+import org.example.webquanao.dto.request.UserRequest;
+import org.example.webquanao.dto.response.UserResponse;
 import org.example.webquanao.entity.Role;
 import org.example.webquanao.entity.User;
 import org.example.webquanao.utils.PasswordUtil;
@@ -25,11 +27,12 @@ public class UserService {
 
         try {
             List<User> users = userDAO.findAll();
+            List<UserResponse> responses = new ArrayList<>();
             for (User user : users) {
-                user.setRoles(roleDAO.getRolesByUser(user.getId()));
+                responses.add(toResponse(user, roleDAO.getRolesByUser(user.getId())));
             }
 
-            data.put("users", users);
+            data.put("users", responses);
             data.put("roles", roleDAO.findAll());
             return Result.ok("Lay danh sach user thanh cong", data);
         } catch (Exception e) {
@@ -38,19 +41,20 @@ public class UserService {
         }
     }
 
-    public Result addUser(User user, List<Integer> roleIds) {
+    public Result addUser(UserRequest dto) {
         try {
             // UC-1.11 / 2a1.5: He thong kiem tra du lieu truoc khi them user.
-            String validationMessage = validateUser(user, roleIds, true);
+            String validationMessage = validateUser(dto, true);
             if (validationMessage != null) {
                 return Result.fail(validationMessage);
             }
 
-            User existingEmail = userDAO.findByEmail(user.getEmail());
+            User existingEmail = userDAO.findByEmail(dto.getEmail());
             if (existingEmail != null) {
                 return Result.fail("Email da duoc su dung");
             }
 
+            User user = toEntity(dto);
             // NFR1.11-2: Mat khau khoi tao phai duoc hash mot chieu truoc khi luu CSDL.
             user.setPassword(PasswordUtil.hashPassword(user.getPassword()));
             user.setActive(true);
@@ -58,7 +62,7 @@ public class UserService {
 
             // UC-1.11 / 2a1.6: Cap nhat CSDL, sau do gan quyen cho user moi.
             int userId = userDAO.insertManagedUser(user);
-            userRoleDAO.replaceRolesForUser(userId, normalizeRoleIds(roleIds));
+            userRoleDAO.replaceRolesForUser(userId, normalizeRoleIds(dto.getRoleIds()));
 
             return Result.ok("Them user thanh cong", null);
         } catch (Exception e) {
@@ -67,24 +71,25 @@ public class UserService {
         }
     }
 
-    public Result updateUser(User user, List<Integer> roleIds) {
+    public Result updateUser(UserRequest dto) {
         try {
             // UC-1.11 / 2a2.6: He thong kiem tra du lieu truoc khi sua user.
-            String validationMessage = validateUser(user, roleIds, false);
+            String validationMessage = validateUser(dto, false);
             if (validationMessage != null) {
                 return Result.fail(validationMessage);
             }
 
-            User existing = userDAO.findById(user.getId());
+            User existing = userDAO.findById(dto.getId());
             if (existing == null) {
                 return Result.fail("Khong tim thay user");
             }
 
-            User existingEmail = userDAO.findByEmail(user.getEmail());
-            if (existingEmail != null && existingEmail.getId() != user.getId()) {
+            User existingEmail = userDAO.findByEmail(dto.getEmail());
+            if (existingEmail != null && existingEmail.getId() != dto.getId()) {
                 return Result.fail("Email da duoc su dung");
             }
 
+            User user = toEntity(dto);
             user.setActive(existing.isActive());
             user.setVerified(existing.isVerified());
 
@@ -95,7 +100,7 @@ public class UserService {
                 user.setPassword(PasswordUtil.hashPassword(user.getPassword()));
                 userDAO.updateManagedUserWithPassword(user);
             }
-            userRoleDAO.replaceRolesForUser(user.getId(), normalizeRoleIds(roleIds));
+            userRoleDAO.replaceRolesForUser(user.getId(), normalizeRoleIds(dto.getRoleIds()));
 
             return Result.ok("Sua user thanh cong", null);
         } catch (Exception e) {
@@ -127,8 +132,9 @@ public class UserService {
         }
     }
 
-    private String validateUser(User user, List<Integer> roleIds, boolean requirePassword) {
+    private String validateUser(UserRequest user, boolean requirePassword) {
         trimUser(user);
+        List<Integer> roleIds = user.getRoleIds();
 
         if (isBlank(user.getFullName()) || isBlank(user.getEmail())) {
             return "Vui long nhap day du cac truong bat buoc";
@@ -158,11 +164,35 @@ public class UserService {
         return null;
     }
 
-    private void trimUser(User user) {
+    private void trimUser(UserRequest user) {
         user.setEmail(trim(user.getEmail()));
         user.setFullName(trim(user.getFullName()));
         user.setPhone(trim(user.getPhone()));
         user.setAddress(trim(user.getAddress()));
+    }
+
+    private User toEntity(UserRequest dto) {
+        User user = new User();
+        user.setId(dto.getId());
+        user.setFullName(dto.getFullName());
+        user.setEmail(dto.getEmail());
+        user.setPassword(dto.getPassword());
+        user.setPhone(dto.getPhone());
+        user.setAddress(dto.getAddress());
+        return user;
+    }
+
+    private UserResponse toResponse(User user, List<Role> roles) {
+        return new UserResponse(
+                user.getId(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getAddress(),
+                user.isActive(),
+                user.isVerified(),
+                roles
+        );
     }
 
     private List<Integer> normalizeRoleIds(List<Integer> roleIds) {

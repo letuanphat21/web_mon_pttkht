@@ -3,6 +3,7 @@ package org.example.webquanao.service;
 import org.example.webquanao.action.Result;
 import org.example.webquanao.dao.PasswordResetTokenDAO;
 import org.example.webquanao.dao.UserDAO;
+import org.example.webquanao.dto.request.PasswordResetRequest;
 import org.example.webquanao.entity.PasswordResetToken;
 import org.example.webquanao.entity.User;
 import org.example.webquanao.utils.PasswordUtil;
@@ -26,8 +27,8 @@ public class PasswordResetService {
     private final PasswordResetTokenDAO tokenDAO = new PasswordResetTokenDAO();
     private final EmailService emailService = new EmailService();
 
-    public Result requestReset(String email, String requestIp, String userAgent) {
-        email = trim(email);
+    public Result requestReset(PasswordResetRequest dto) {
+        String email = trim(dto.getEmail());
 
         if (isBlank(email) || !email.contains("@")) {
             return Result.fail("Email không hợp lệ");
@@ -46,12 +47,12 @@ public class PasswordResetService {
             return Result.fail("Tài khoản của bạn đang bị khóa, không thể đặt lại mật khẩu lúc này");
         }
 
-        if (user.getLockUntil() != null && user.getLockUntil().isAfter(LocalDateTime.now())){
+        if (user.getLockUntil() != null && user.getLockUntil().isAfter(LocalDateTime.now())) {
             return Result.fail("Tài khoản của bạn đang bị khóa đến " + user.getLockUntil());
         }
 
         Timestamp requestLimitFrom = new Timestamp(System.currentTimeMillis() - 60L * 60L * 1000L);
-        int recentRequests = tokenDAO.countRecentRequests(user.getId(), requestIp, requestLimitFrom);
+        int recentRequests = tokenDAO.countRecentRequests(user.getId(), dto.getRequestIp(), requestLimitFrom);
         if (recentRequests >= REQUEST_LIMIT_PER_HOUR) {
             return Result.fail("Bạn đã gửi yêu cầu quá nhiều lần. Vui lòng thử lại sau");
         }
@@ -62,7 +63,7 @@ public class PasswordResetService {
 
         try {
             tokenDAO.markAllUnusedByUserAsUsed(user.getId());
-            tokenDAO.insert(user.getId(), tokenHash, expiresAt, requestIp, limitLength(userAgent, 255));
+            tokenDAO.insert(user.getId(), tokenHash, expiresAt, dto.getRequestIp(), limitLength(dto.getUserAgent(), 255));
 
             String content = "<h3>Xin chào " + escapeHtml(user.getFullName()) + "</h3>"
                     + "<p>Bạn vừa yêu cầu khôi phục mật khẩu.</p>"
@@ -81,9 +82,9 @@ public class PasswordResetService {
         return Result.ok("Mã xác nhận đã được gửi đến email của bạn", Map.of("email", user.getEmail()));
     }
 
-    public Result verifyOtp(String email, String otp) {
-        email = trim(email);
-        otp = trim(otp);
+    public Result verifyOtp(PasswordResetRequest dto) {
+        String email = trim(dto.getEmail());
+        String otp = trim(dto.getOtp());
 
         if (isBlank(email) || !OTP_PATTERN.matcher(otp).matches()) {
             return Result.fail("Mã xác nhận không hợp lệ hoặc đã hết hạn");
@@ -102,8 +103,11 @@ public class PasswordResetService {
         return Result.ok("Mã xác nhận hợp lệ", Map.of("email", user.getEmail()));
     }
 
-    public Result resetPassword(String email, String password, String confirmPassword) {
-        email = trim(email);
+    public Result resetPassword(PasswordResetRequest dto) {
+        String email = trim(dto.getEmail());
+        String password = dto.getPassword();
+        String confirmPassword = dto.getConfirmPassword();
+
         if (isBlank(email)) {
             return Result.fail("Phiên khôi phục mật khẩu không hợp lệ hoặc đã hết hạn");
         }

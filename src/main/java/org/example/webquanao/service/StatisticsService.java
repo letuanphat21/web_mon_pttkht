@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import org.example.webquanao.action.Result;
 import org.example.webquanao.dao.CategoryDAO;
 import org.example.webquanao.dao.StatisticsDAO;
+import org.example.webquanao.dto.response.StatisticRowResponse;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -36,10 +37,10 @@ public class StatisticsService {
         Timestamp endAt = Timestamp.valueOf(endDate.plusDays(1).atStartOfDay());
 
         Map<String, Object> summary = statisticsDAO.getSummary(startAt, endAt, categoryId);
-        List<Map<String, Object>> dailyRevenue = statisticsDAO.getDailyRevenue(startAt, endAt, categoryId);
-        List<Map<String, Object>> topProducts = statisticsDAO.getTopProducts(startAt, endAt, categoryId);
-        List<Map<String, Object>> categoryRevenue = statisticsDAO.getRevenueByCategory(startAt, endAt, categoryId);
-        List<Map<String, Object>> orderStatuses = statisticsDAO.getOrderStatusCounts(startAt, endAt);
+        List<StatisticRowResponse> dailyRevenue = statisticsDAO.getDailyRevenue(startAt, endAt, categoryId);
+        List<StatisticRowResponse> topProducts = statisticsDAO.getTopProducts(startAt, endAt, categoryId);
+        List<StatisticRowResponse> categoryRevenue = statisticsDAO.getRevenueByCategory(startAt, endAt, categoryId);
+        List<StatisticRowResponse> orderStatuses = statisticsDAO.getOrderStatusCounts(startAt, endAt);
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("type", selectedType);
@@ -66,9 +67,9 @@ public class StatisticsService {
     public String toCsv(Map<String, Object> reportData) {
         StringBuilder csv = new StringBuilder("\uFEFF");
         Map<String, Object> summary = (Map<String, Object>) reportData.get("summary");
-        List<Map<String, Object>> dailyRevenue = (List<Map<String, Object>>) reportData.get("dailyRevenue");
-        List<Map<String, Object>> topProducts = (List<Map<String, Object>>) reportData.get("topProducts");
-        List<Map<String, Object>> categoryRevenue = (List<Map<String, Object>>) reportData.get("categoryRevenue");
+        List<StatisticRowResponse> dailyRevenue = (List<StatisticRowResponse>) reportData.get("dailyRevenue");
+        List<StatisticRowResponse> topProducts = (List<StatisticRowResponse>) reportData.get("topProducts");
+        List<StatisticRowResponse> categoryRevenue = (List<StatisticRowResponse>) reportData.get("categoryRevenue");
 
         csv.append("Bao cao thong ke\n");
         csv.append("Tu ngay,").append(reportData.get("startDate")).append("\n");
@@ -82,43 +83,43 @@ public class StatisticsService {
 
         csv.append("Doanh thu theo ngay\n");
         csv.append("Ngay,So don hang,Doanh thu\n");
-        for (Map<String, Object> row : dailyRevenue) {
-            csv.append(escapeCsv(row.get("label"))).append(',')
-                    .append(row.get("orderCount")).append(',')
-                    .append(row.get("revenue")).append('\n');
+        for (StatisticRowResponse row : dailyRevenue) {
+            csv.append(escapeCsv(row.getLabel())).append(',')
+                    .append(row.getOrderCount()).append(',')
+                    .append(row.getRevenue()).append('\n');
         }
 
         csv.append("\nSan pham ban chay\n");
         csv.append("Ma san pham,Ten san pham,Danh muc,So luong,Doanh thu\n");
-        for (Map<String, Object> row : topProducts) {
-            csv.append(row.get("productId")).append(',')
-                    .append(escapeCsv(row.get("productName"))).append(',')
-                    .append(escapeCsv(row.get("categoryName"))).append(',')
-                    .append(row.get("soldQuantity")).append(',')
-                    .append(row.get("revenue")).append('\n');
+        for (StatisticRowResponse row : topProducts) {
+            csv.append(row.getProductId()).append(',')
+                    .append(escapeCsv(row.getProductName())).append(',')
+                    .append(escapeCsv(row.getCategoryName())).append(',')
+                    .append(row.getSoldQuantity()).append(',')
+                    .append(row.getRevenue()).append('\n');
         }
 
         csv.append("\nDoanh thu theo danh muc\n");
         csv.append("Danh muc,So luong,Doanh thu\n");
-        for (Map<String, Object> row : categoryRevenue) {
-            csv.append(escapeCsv(row.get("categoryName"))).append(',')
-                    .append(row.get("soldQuantity")).append(',')
-                    .append(row.get("revenue")).append('\n');
+        for (StatisticRowResponse row : categoryRevenue) {
+            csv.append(escapeCsv(row.getCategoryName())).append(',')
+                    .append(row.getSoldQuantity()).append(',')
+                    .append(row.getRevenue()).append('\n');
         }
 
         return csv.toString();
     }
 
-    private String buildChartJson(List<Map<String, Object>> dailyRevenue,
-                                  List<Map<String, Object>> topProducts,
-                                  List<Map<String, Object>> categoryRevenue) {
+    private String buildChartJson(List<StatisticRowResponse> dailyRevenue,
+                                  List<StatisticRowResponse> topProducts,
+                                  List<StatisticRowResponse> categoryRevenue) {
         Map<String, Object> charts = new LinkedHashMap<>();
-        charts.put("dailyLabels", dailyRevenue.stream().map(row -> row.get("label")).toList());
-        charts.put("dailyRevenue", dailyRevenue.stream().map(row -> row.get("revenue")).toList());
-        charts.put("productLabels", topProducts.stream().map(row -> row.get("productName")).toList());
-        charts.put("productQuantity", topProducts.stream().map(row -> row.get("soldQuantity")).toList());
-        charts.put("categoryLabels", categoryRevenue.stream().map(row -> row.get("categoryName")).toList());
-        charts.put("categoryRevenue", categoryRevenue.stream().map(row -> row.get("revenue")).toList());
+        charts.put("dailyLabels", dailyRevenue.stream().map(StatisticRowResponse::getLabel).toList());
+        charts.put("dailyRevenue", dailyRevenue.stream().map(StatisticRowResponse::getRevenue).toList());
+        charts.put("productLabels", topProducts.stream().map(StatisticRowResponse::getProductName).toList());
+        charts.put("productQuantity", topProducts.stream().map(StatisticRowResponse::getSoldQuantity).toList());
+        charts.put("categoryLabels", categoryRevenue.stream().map(StatisticRowResponse::getCategoryName).toList());
+        charts.put("categoryRevenue", categoryRevenue.stream().map(StatisticRowResponse::getRevenue).toList());
         return gson.toJson(charts);
     }
 

@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.example.webquanao.action.Result;
+import org.example.webquanao.dto.request.PasswordResetRequest;
 import org.example.webquanao.service.PasswordResetService;
 
 import java.io.IOException;
@@ -42,10 +43,12 @@ public class ResetPasswordController extends HttpServlet {
 
         HttpSession session = request.getSession(false);
         String email = session == null ? null : (String) session.getAttribute("resetPasswordEmail");
-        String password = request.getParameter("password");
-        String confirmPassword = request.getParameter("confirmPassword");
+        PasswordResetRequest resetRequest = new PasswordResetRequest();
+        resetRequest.setEmail(email);
+        resetRequest.setPassword(request.getParameter("password"));
+        resetRequest.setConfirmPassword(request.getParameter("confirmPassword"));
 
-        Result result = passwordResetService.resetPassword(email, password, confirmPassword);
+        Result result = passwordResetService.resetPassword(resetRequest);
         if (result.isSuccess()) {
             if (session != null) {
                 session.removeAttribute("pendingResetEmail");
