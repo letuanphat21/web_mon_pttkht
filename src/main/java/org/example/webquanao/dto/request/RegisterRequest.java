@@ -1,15 +1,15 @@
-package org.example.webquanao.dto;
+package org.example.webquanao.dto.request;
 
-public class RegisterDTO {
+public class RegisterRequest {
     private String email;
     private String password;
     private String passwordAgain;
     private String fullName;
 
-    public RegisterDTO() {
+    public RegisterRequest() {
     }
 
-    public RegisterDTO(String email, String password, String passwordAgain, String fullName) {
+    public RegisterRequest(String email, String password, String passwordAgain, String fullName) {
         this.email = email;
         this.password = password;
         this.passwordAgain = passwordAgain;

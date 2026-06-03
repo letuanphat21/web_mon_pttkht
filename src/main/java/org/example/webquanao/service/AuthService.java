@@ -3,7 +3,10 @@ package org.example.webquanao.service;
 import org.example.webquanao.action.Result;
 import org.example.webquanao.dao.UserDAO;
 import org.example.webquanao.dao.UserRoleDAO;
-import org.example.webquanao.dto.RegisterDTO;
+import org.example.webquanao.dto.request.RegisterRequest;
+import org.example.webquanao.dto.request.LoginRequest;
+import org.example.webquanao.dto.request.GoogleLoginRequest;
+import org.example.webquanao.dto.response.LoginResponse;
 import org.example.webquanao.entity.User;
 import org.example.webquanao.utils.PasswordUtil;
 
@@ -15,7 +18,7 @@ public class AuthService {
     private UserRoleDAO userRoleDAO = new UserRoleDAO();
     private EmailService emailService = new EmailService();
 
-    public Result registerUser(RegisterDTO dto) {
+    public Result registerUser(RegisterRequest dto) {
         // 2. check email
         User usermail = userDAO.findByEmail(dto.getEmail());
         if (usermail!= null) {
@@ -98,10 +101,10 @@ public class AuthService {
         return Result.ok("Kích hoạt tài khoàn thành công", null);
     }
 
-    public Result login(String email, String password) {
+    public Result login(LoginRequest dto) {
 
         // 1. Tìm user
-        User user = userDAO.findByEmail(email);
+        User user = userDAO.findByEmail(dto.getEmail());
 
         // không lộ tài khoản tồn tại hay không
         if (user == null) {
@@ -119,7 +122,7 @@ public class AuthService {
         }
 
         // 4. Check password
-        boolean isMatch = PasswordUtil.checkPassword(password, user.getPassword());
+        boolean isMatch = PasswordUtil.checkPassword(dto.getPassword(), user.getPassword());
 
         if (!isMatch) {
             handleUserFail(user);
@@ -131,12 +134,11 @@ public class AuthService {
             return Result.fail("Tài khoản chưa kích hoạt");
         }
 
-        Map<String, Object> data = new HashMap<String, Object>();
-        data.put("username", user.getFullName());
-        data.put("email", user.getEmail());
         List<String> roles = userRoleDAO.getRolesByUserId(user.getId());
-        data.put("roles", roles);
-        data.put("id", user.getId());
+        LoginResponse responseData = new LoginResponse(user.getId(), user.getEmail(), user.getFullName(), roles);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("user", responseData);
 
         // 6. Login thành công → reset fail count
         userDAO.updateFailedAttemptsAndLock(user.getId(), 0, null);
@@ -164,17 +166,17 @@ public class AuthService {
     }
 
     // Login google
-    public Result loginGoogle(String email, String googleId, String name) {
+    public Result loginGoogle(GoogleLoginRequest dto) {
         // 1. tìm user theo email
-        User user = userDAO.findByEmail(email);
+        User user = userDAO.findByEmail(dto.getEmail());
 
         // 2. nếu chưa có user → tạo mới
         if (user == null) {
 
             User newUser = new User();
-            newUser.setEmail(email);
-            newUser.setGoogleId(googleId);
-            newUser.setFullName(name);
+            newUser.setEmail(dto.getEmail());
+            newUser.setGoogleId(dto.getGoogleId());
+            newUser.setFullName(dto.getName());
             newUser.setActive(true);
             newUser.setVerified(true);
             newUser.setPassword(PasswordUtil.hashPassword("0000000"));
@@ -182,30 +184,30 @@ public class AuthService {
             int userId = userDAO.insertGoogleUser(newUser);
             userRoleDAO.addRoleToUser(userId, 1);
             newUser.setId(userId);
-            Map<String, Object> data = new HashMap<String, Object>();
-            data.put("username", newUser.getFullName());
-            data.put("email", newUser.getEmail());
+
             List<String> roles = userRoleDAO.getRolesByUserId(newUser.getId());
-            data.put("roles", roles);
-            data.put("id", user.getId());
+            LoginResponse responseData = new LoginResponse(newUser.getId(), newUser.getEmail(), newUser.getFullName(), roles);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("user", responseData);
 
             return Result.ok("Đăng nhập Google thành công", data);
         }
 
         // 3. nếu đã có user nhưng chưa có googleId
         if (user.getGoogleId() == null) {
-            userDAO.updateGoogleId(user.getId(), googleId);
-            user.setGoogleId(googleId);
+            userDAO.updateGoogleId(user.getId(), dto.getGoogleId());
+            user.setGoogleId(dto.getGoogleId());
         }
 
         // 4. check googleId có khớp không
-        if (user.getGoogleId() != null && !user.getGoogleId().equals(googleId)) {
+        if (user.getGoogleId() != null && !user.getGoogleId().equals(dto.getGoogleId())) {
             return Result.fail("Google account không hợp lệ");
         }
 
         // 5. check khóa tài khoản do chơi ngu
-//        if (user.getLockUntil() != null && user.getLockUntil().after(new java.util.Date())) {
-//            return Result.fail("Tài khoản đang bị khóa");
+//        if (user.getLockUntil() != null && user.getLockUntil().isAfter(LocalDateTime.now())) {
+//            return Result.fail("Tài khoản bị khóa đến " + user.getLockUntil());
 //        }
 
         // 6 check tài khoản do sai qui định chính sách gì đó mà tui cũng chả biết
@@ -213,11 +215,12 @@ public class AuthService {
             return Result.fail("Tài khoản bị khóa do quy định chính sách ngu ngốc gì đó");
         }
 
-        Map<String, Object> data = new HashMap<String, Object>();
-        data.put("username", user.getFullName());
-        data.put("email", user.getEmail());
         List<String> roles = userRoleDAO.getRolesByUserId(user.getId());
-        data.put("roles", roles);
+        LoginResponse responseData = new LoginResponse(user.getId(), user.getEmail(), user.getFullName(), roles);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("user", responseData);
+
         // 6. thành công
         return Result.ok("Đăng nhập Google thành công", data);
     }

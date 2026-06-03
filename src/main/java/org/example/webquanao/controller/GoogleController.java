@@ -6,13 +6,13 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 import org.example.webquanao.action.Result;
-
+import org.example.webquanao.dto.request.GoogleLoginRequest;
+import org.example.webquanao.dto.response.LoginResponse;
 import org.example.webquanao.helper.HttpClientHelper;
 import org.example.webquanao.service.AuthService;
 import org.example.webquanao.utils.GoogleProperties;
 
 import java.io.IOException;
-
 import java.util.List;
 
 @WebServlet(name = "GoogleController", value = "/loginGoogle")
@@ -49,12 +49,17 @@ public class GoogleController extends HttpServlet {
             String name = userJson.get("name").getAsString();
             String gooogleId = userJson.get("sub").getAsString();
 
-            Result result = authService.loginGoogle(email, gooogleId, name);
+            // 3. Đóng gói request DTO
+            GoogleLoginRequest googleLoginRequest = new GoogleLoginRequest(email, gooogleId, name);
+
+            // 4. Gọi Service
+            Result result = authService.loginGoogle(googleLoginRequest);
 
             if (result.isSuccess()) {
-                String username1 = (String) result.getData().get("username");
-                String email1 = (String) result.getData().get("email");
-                List<String> roles = (List<String>) result.getData().get("roles");
+                LoginResponse loginResponse = (LoginResponse) result.getData().get("user");
+                String username1 = loginResponse.getUsername();
+                String email1 = loginResponse.getEmail();
+                List<String> roles = loginResponse.getRoles();
 
                 HttpSession session = request.getSession();
                 session.setAttribute("username", username1);
