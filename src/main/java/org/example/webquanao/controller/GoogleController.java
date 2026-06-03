@@ -6,18 +6,23 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 import org.example.webquanao.action.Result;
-
+import org.example.webquanao.dto.request.GoogleLoginRequest;
+import org.example.webquanao.dto.response.LoginResponse;
 import org.example.webquanao.helper.HttpClientHelper;
 import org.example.webquanao.service.AuthService;
 import org.example.webquanao.utils.GoogleProperties;
 
 import java.io.IOException;
-
 import java.util.List;
 
 @WebServlet(name = "GoogleController", value = "/loginGoogle")
 public class GoogleController extends HttpServlet {
+    private AuthService authService;
 
+    @Override
+    public void init() {
+        authService = new AuthService();
+    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -44,29 +49,36 @@ public class GoogleController extends HttpServlet {
             String name = userJson.get("name").getAsString();
             String gooogleId = userJson.get("sub").getAsString();
 
-            AuthService authService = new AuthService();
-            Result result = authService.loginGoogle(email, gooogleId, name);
+            // 3. Đóng gói request DTO
+            GoogleLoginRequest googleLoginRequest = new GoogleLoginRequest(email, gooogleId, name);
+
+            // 4. Gọi Service
+            Result result = authService.loginGoogle(googleLoginRequest);
 
             if (result.isSuccess()) {
-                String username1 = (String) result.getData().get("username");
-                String email1 = (String) result.getData().get("email");
-                List<String> roles = (List<String>) result.getData().get("roles");
+                LoginResponse loginResponse = (LoginResponse) result.getData().get("user");
+                String username1 = loginResponse.getUsername();
+                String email1 = loginResponse.getEmail();
+                List<String> roles = loginResponse.getRoles();
 
                 HttpSession session = request.getSession();
                 session.setAttribute("username", username1);
                 session.setAttribute("email", email1);
                 // kiểm tra role
-                boolean isAdmin = roles.stream().anyMatch(r -> r.equals("ADMIN"));
+//                boolean isAdmin = roles.stream().anyMatch(r -> r.equals("ADMIN"));
 
-                if (isAdmin) {
-                    request.getRequestDispatcher("/WEB-INF/managerCategory.jsp").forward(request, response);
-                } else {
+//                if (isAdmin) {
+//                    request.getRequestDispatcher("/WEB-INF/managerCategory.jsp").forward(request, response);
+//                } else {
                     request.getRequestDispatcher("/WEB-INF/home.jsp").forward(request, response);
-                }
+//                }
+            }else {
+                request.setAttribute("error", "Hazz bạn không đăng nhập thành công rồi huhu");
+                request.getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
             }
         } else {
-            request.setAttribute("message", "Hazz bạn không đăng nhập thành công rồi huhu");
-            request.getRequestDispatcher("/WEB-INF/fail.jsp").forward(request, response);
+            request.setAttribute("error", "Hazz bạn không đăng nhập thành công rồi huhu");
+            request.getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
         }
     }
 

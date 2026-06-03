@@ -1,6 +1,7 @@
 package org.example.webquanao.entity;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 public class User {
@@ -13,12 +14,13 @@ public class User {
     private String phone;
     private String address;
     private String avatar;
-    private Timestamp createdAt;
+    private LocalDateTime createdAt;
     private boolean verified;
     private String codeActive;
+    private LocalDateTime codeActiveCreatedAt;
     private boolean active;
     private int failedAttempts;
-    private Timestamp lockUntil;
+    private LocalDateTime lockUntil;
 
     // nhiều role
     private List<Role> roles;
@@ -63,8 +65,7 @@ public class User {
     public String getAvatar() { return avatar; }
     public void setAvatar(String avatar) { this.avatar = avatar; }
 
-    public Timestamp getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+
 
     public List<Role> getRoles() { return roles; }
     public void setRoles(List<Role> roles) { this.roles = roles; }
@@ -84,6 +85,14 @@ public class User {
         this.codeActive = codeActive;
     }
 
+    public LocalDateTime getCodeActiveCreatedAt() {
+        return codeActiveCreatedAt;
+    }
+
+    public void setCodeActiveCreatedAt(LocalDateTime codeActiveCreatedAt) {
+        this.codeActiveCreatedAt = codeActiveCreatedAt;
+    }
+
 
     public int getFailedAttempts() {
         return failedAttempts;
@@ -93,11 +102,19 @@ public class User {
         this.failedAttempts = failedAttempts;
     }
 
-    public Timestamp getLockUntil() {
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getLockUntil() {
         return lockUntil;
     }
 
-    public void setLockUntil(Timestamp lockUntil) {
+    public void setLockUntil(LocalDateTime lockUntil) {
         this.lockUntil = lockUntil;
     }
 

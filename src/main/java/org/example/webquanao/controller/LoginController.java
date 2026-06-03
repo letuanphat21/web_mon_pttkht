@@ -4,8 +4,8 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 import org.example.webquanao.action.Result;
-import org.example.webquanao.entity.Role;
-import org.example.webquanao.entity.User;
+import org.example.webquanao.dto.request.LoginRequest;
+import org.example.webquanao.dto.response.LoginResponse;
 import org.example.webquanao.service.AuthService;
 
 import java.io.IOException;
@@ -13,6 +13,12 @@ import java.util.List;
 
 @WebServlet(name = "LoginController", value = "/login")
 public class LoginController extends HttpServlet {
+    private AuthService authService;
+
+    @Override
+    public void init() {
+        authService = new AuthService();
+    }
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
@@ -24,20 +30,23 @@ public class LoginController extends HttpServlet {
         response.setContentType("text/html;charset=UTF-8");
 
         // 1. lấy data từ form
-        String username = request.getParameter("email");
-        String password = request.getParameter("password");
+        String emailParam = request.getParameter("email");
+        String passwordParam = request.getParameter("password");
 
-        // 3. gọi service
-        AuthService authService = new AuthService();
-        Result result = authService.login(username, password);
+        // 2. Tạo Request DTO
+        LoginRequest loginRequest = new LoginRequest(emailParam, passwordParam);
+
+        // 3. gọi service với DTO
+        Result result = authService.login(loginRequest);
 
         if (result.isSuccess()) {
 
-            // lấy user từ data
-            int userId = (int) result.getData().get("id");
-            String username1 = (String) result.getData().get("username");
-            String email = (String) result.getData().get("email");
-            List<String> roles = (List<String>) result.getData().get("roles");
+            // Lấy Response DTO từ kết quả
+            LoginResponse loginResponse = (LoginResponse) result.getData().get("user");
+            int userId = loginResponse.getId();
+            String username1 = loginResponse.getUsername();
+            String email = loginResponse.getEmail();
+            List<String> roles = loginResponse.getRoles();
 
             // tạo session
             HttpSession session = request.getSession();

@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.example.webquanao.action.Result;
-import org.example.webquanao.entity.Category;
+import org.example.webquanao.dto.response.CategoryResponse;
 import org.example.webquanao.service.CategoryService;
 
 import java.io.IOException;
@@ -28,7 +28,7 @@ public class CategoryController extends HttpServlet {
         Result result = categoryService.getAllCategory();
 
         if (result.isSuccess()) {
-            List<Category> categories = (List<Category>) result.getData().get("categorys");
+            List<CategoryResponse> categories = (List<CategoryResponse>) result.getData().get("categorys");
             request.setAttribute("categories", categories);
         } else {
             request.setAttribute("error", result.getMessage());
@@ -39,14 +39,6 @@ public class CategoryController extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String action = request.getParameter("action");
-        String idParam = request.getParameter("id");
 
-        if ("toggle".equals(action) && idParam != null) {
-            int id = Integer.parseInt(idParam);
-            categoryService.toggleCategoryStatus(id);
-        }
-
-        response.sendRedirect(request.getContextPath() + "/admin/managerCategory");
     }
 }

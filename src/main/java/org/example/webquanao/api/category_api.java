@@ -5,8 +5,8 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 import org.example.webquanao.action.Result;
+import org.example.webquanao.dto.request.CategoryRequest;
 import org.example.webquanao.service.CategoryService;
-import org.example.webquanao.entity.Category;
 
 import java.io.IOException;
 
@@ -22,18 +22,18 @@ public class category_api extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         Gson gson = new Gson();
-        Category category = gson.fromJson(request.getReader(), Category.class);
+        CategoryRequest categoryRequest = gson.fromJson(request.getReader(), CategoryRequest.class);
         CategoryService categoryService = new CategoryService();
-        Result result = categoryService.addCategory(category);
+        Result result = categoryService.addCategory(categoryRequest);
         sendResponse(response, result);
     }
 
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         Gson gson = new Gson();
-        Category category = gson.fromJson(request.getReader(), Category.class);
+        CategoryRequest categoryRequest = gson.fromJson(request.getReader(), CategoryRequest.class);
         CategoryService categoryService = new CategoryService();
-        Result result = categoryService.updateCategory(category);
+        Result result = categoryService.updateCategory(categoryRequest);
         sendResponse(response, result);
     }
 
