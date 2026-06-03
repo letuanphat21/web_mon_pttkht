@@ -20,6 +20,7 @@
             <div class="p-3"><h4>Quản lý</h4></div>
             <nav>
                 <a href="${pageContext.request.contextPath}/admin/dashboard" class="active">Dashboard</a>
+                <a href="${pageContext.request.contextPath}/admin/statistics">Thống kê</a>
                 <a href="${pageContext.request.contextPath}/admin/managerCategory">Quản lý Danh mục</a>
                 <a href="${pageContext.request.contextPath}/admin/invoice?action=list">Quản lý Hóa đơn</a>
                 <a href="${pageContext.request.contextPath}/admin/managerUser">Quản lý Người dùng</a>
