@@ -2,8 +2,11 @@ package org.example.webquanao.service;
 
 import org.example.webquanao.action.Result;
 import org.example.webquanao.dao.CategoryDAO;
+import org.example.webquanao.dto.request.CategoryRequest;
+import org.example.webquanao.dto.response.CategoryResponse;
 import org.example.webquanao.entity.Category;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +20,11 @@ public class CategoryService {
 
         try {
             List<Category> categorys = categoryDAO.findAll();
-            data.put("categorys", categorys);
+            List<CategoryResponse> responses = new ArrayList<>();
+            for (Category c : categorys) {
+                responses.add(new CategoryResponse(c.getId(), c.getName(), c.isActive()));
+            }
+            data.put("categorys", responses);
         } catch (Exception e) {
             e.printStackTrace();
             return Result.fail("Lay danh sach that bai");
@@ -26,15 +33,18 @@ public class CategoryService {
         return Result.ok("Lay danh sach thanh cong", data);
     }
 
-    public Result addCategory(Category category) {
+    public Result addCategory(CategoryRequest dto) {
         try {
-            Category ct = categoryDAO.findByName(category.getName());
+            Category ct = categoryDAO.findByName(dto.getName());
 
             if (ct != null) {
                 return Result.fail("Ten danh muc da ton tai");
             }
 
+            Category category = new Category();
+            category.setName(dto.getName());
             category.setActive(true);
+            
             categoryDAO.insert(category);
 
             return Result.ok("Them danh muc thanh cong", null);
@@ -44,22 +54,22 @@ public class CategoryService {
         }
     }
 
-    public Result updateCategory(Category category) {
+    public Result updateCategory(CategoryRequest dto) {
         try {
-            Category existing = categoryDAO.findById(category.getId());
+            Category existing = categoryDAO.findById(dto.getId());
 
             if (existing == null) {
                 return Result.fail("Khong tim thay danh muc");
             }
 
-            Category ct = categoryDAO.findByName(category.getName());
+            Category ct = categoryDAO.findByName(dto.getName());
 
-            if (ct != null && ct.getId() != category.getId()) {
+            if (ct != null && ct.getId() != dto.getId()) {
                 return Result.fail("Tên danh mục đã tồn tại");
             }
 
-            existing.setName(category.getName());
-            existing.setActive(category.isActive());
+            existing.setName(dto.getName());
+            existing.setActive(dto.isActive());
 
             categoryDAO.update(existing);
 
