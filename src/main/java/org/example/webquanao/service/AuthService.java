@@ -3,6 +3,7 @@ package org.example.webquanao.service;
 import org.example.webquanao.action.Result;
 import org.example.webquanao.dao.UserDAO;
 import org.example.webquanao.dao.UserRoleDAO;
+import org.example.webquanao.dto.RegisterDTO;
 import org.example.webquanao.entity.User;
 import org.example.webquanao.utils.PasswordUtil;
 
@@ -14,13 +15,9 @@ public class AuthService {
     private UserRoleDAO userRoleDAO = new UserRoleDAO();
     private EmailService emailService = new EmailService();
 
-    public Result registerUser(User user) {
-        // 1. check username
-//        if (userDAO.findByUsername(user.getUsername()) != null) {
-//            return Result.fail("Tên đăng nhập đã tồn tại");
-//        }
+    public Result registerUser(RegisterDTO dto) {
         // 2. check email
-        User usermail = userDAO.findByEmail(user.getEmail());
+        User usermail = userDAO.findByEmail(dto.getEmail());
         if (usermail!= null) {
 //            if(usermail.getGoogleId() != null) {
 //                String hashed = PasswordUtil.hashPassword(user.getPassword());
@@ -31,12 +28,18 @@ public class AuthService {
                 return Result.fail("Email đã tồn tại");
 //            }
         }
+        
+        User user = new User();
+        user.setEmail(dto.getEmail());
+        user.setFullName(dto.getFullName());
+
         // 3. hash password
-        String hashed = PasswordUtil.hashPassword(user.getPassword());
+        String hashed = PasswordUtil.hashPassword(dto.getPassword());
         user.setPassword(hashed);
         // 4. tạo code kích hoạt
         String code = UUID.randomUUID().toString();
         user.setCodeActive(code);
+//        user.setCodeActiveCreatedAt(LocalDateTime.now());
 
         int userId;
         // Kiểm tra coi insert tài khoản vô database ổn khng
@@ -79,6 +82,10 @@ public class AuthService {
                 return Result.fail("Kích hoạt tài khoản thất bại");
             }
             if (user.getCodeActive().equals(code)) {
+                // Kiểm tra mã kích hoạt đã hết hạn (24 giờ) hay chưa
+                if (user.getCodeActiveCreatedAt() != null && user.getCodeActiveCreatedAt().plusHours(24).isBefore(LocalDateTime.now())) {
+                    return Result.fail("Mã kích hoạt đã hết hạn (chỉ có hiệu lực trong 24 giờ)");
+                }
                 user.setVerified(true);
                 userDAO.updateCodeActive(user);
             }else {
