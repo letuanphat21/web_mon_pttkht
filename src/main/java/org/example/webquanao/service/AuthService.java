@@ -6,6 +6,7 @@ import org.example.webquanao.dao.UserRoleDAO;
 import org.example.webquanao.entity.User;
 import org.example.webquanao.utils.PasswordUtil;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class AuthService {
@@ -101,7 +102,7 @@ public class AuthService {
         }
 
         // 2. Check bị khóa
-        if (user.getLockUntil() != null && user.getLockUntil().after(new Date())) {
+        if (user.getLockUntil() != null && user.getLockUntil().isAfter(LocalDateTime.now())) {
             return Result.fail("Tài khoản bị khóa đến " + user.getLockUntil());
         }
 
@@ -115,7 +116,7 @@ public class AuthService {
 
         if (!isMatch) {
             handleUserFail(user);
-            return Result.fail("Tài khoản hoặc mật khẩu không đúng");
+            return Result.fail(" mật khẩu không đúng");
         }
 
         // 5. Check kích hoạt
@@ -140,8 +141,16 @@ public class AuthService {
         int attempts = user.getFailedAttempts() + 1;
 
         if (attempts >= 5) {
-            Date lockTime = new Date(System.currentTimeMillis() + 30 * 60 * 1000);
-            userDAO.updateFailedAttemptsAndLock(user.getId(), 0, lockTime);
+
+            LocalDateTime lockTime =
+                    LocalDateTime.now().plusMinutes(30);
+
+            userDAO.updateFailedAttemptsAndLock(
+                    user.getId(),
+                    0,
+                    lockTime
+            );
+
         } else {
             userDAO.updateFailedAttempts(user.getId(), attempts);
         }
@@ -188,9 +197,9 @@ public class AuthService {
         }
 
         // 5. check khóa tài khoản do chơi ngu
-        if (user.getLockUntil() != null && user.getLockUntil().after(new java.util.Date())) {
-            return Result.fail("Tài khoản đang bị khóa");
-        }
+//        if (user.getLockUntil() != null && user.getLockUntil().after(new java.util.Date())) {
+//            return Result.fail("Tài khoản đang bị khóa");
+//        }
 
         // 6 check tài khoản do sai qui định chính sách gì đó mà tui cũng chả biết
         if (user.isActive() == false) {

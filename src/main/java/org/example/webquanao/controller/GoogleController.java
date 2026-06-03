@@ -17,7 +17,12 @@ import java.util.List;
 
 @WebServlet(name = "GoogleController", value = "/loginGoogle")
 public class GoogleController extends HttpServlet {
+    private AuthService authService;
 
+    @Override
+    public void init() {
+        authService = new AuthService();
+    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -44,7 +49,6 @@ public class GoogleController extends HttpServlet {
             String name = userJson.get("name").getAsString();
             String gooogleId = userJson.get("sub").getAsString();
 
-            AuthService authService = new AuthService();
             Result result = authService.loginGoogle(email, gooogleId, name);
 
             if (result.isSuccess()) {
@@ -56,17 +60,20 @@ public class GoogleController extends HttpServlet {
                 session.setAttribute("username", username1);
                 session.setAttribute("email", email1);
                 // kiểm tra role
-                boolean isAdmin = roles.stream().anyMatch(r -> r.equals("ADMIN"));
+//                boolean isAdmin = roles.stream().anyMatch(r -> r.equals("ADMIN"));
 
-                if (isAdmin) {
-                    request.getRequestDispatcher("/WEB-INF/managerCategory.jsp").forward(request, response);
-                } else {
+//                if (isAdmin) {
+//                    request.getRequestDispatcher("/WEB-INF/managerCategory.jsp").forward(request, response);
+//                } else {
                     request.getRequestDispatcher("/WEB-INF/home.jsp").forward(request, response);
-                }
+//                }
+            }else {
+                request.setAttribute("error", "Hazz bạn không đăng nhập thành công rồi huhu");
+                request.getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
             }
         } else {
-            request.setAttribute("message", "Hazz bạn không đăng nhập thành công rồi huhu");
-            request.getRequestDispatcher("/WEB-INF/fail.jsp").forward(request, response);
+            request.setAttribute("error", "Hazz bạn không đăng nhập thành công rồi huhu");
+            request.getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
         }
     }
 

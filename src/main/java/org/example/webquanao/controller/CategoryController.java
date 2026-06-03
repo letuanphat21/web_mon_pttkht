@@ -39,14 +39,6 @@ public class CategoryController extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String action = request.getParameter("action");
-        String idParam = request.getParameter("id");
 
-        if ("toggle".equals(action) && idParam != null) {
-            int id = Integer.parseInt(idParam);
-            categoryService.toggleCategoryStatus(id);
-        }
-
-        response.sendRedirect(request.getContextPath() + "/admin/managerCategory");
     }
 }

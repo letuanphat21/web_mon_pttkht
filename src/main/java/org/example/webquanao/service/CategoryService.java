@@ -55,7 +55,7 @@ public class CategoryService {
             Category ct = categoryDAO.findByName(category.getName());
 
             if (ct != null && ct.getId() != category.getId()) {
-                return Result.fail("Ten danh muc da ton tai");
+                return Result.fail("Tên danh mục đã tồn tại");
             }
 
             existing.setName(category.getName());
@@ -87,4 +87,5 @@ public class CategoryService {
             return Result.fail("Thay doi trang thai that bai");
         }
     }
+
 }
