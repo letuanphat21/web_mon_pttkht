@@ -17,6 +17,9 @@
 <p style="color:red;">
     ${error}
 </p>
+<p style="color:green;">
+    ${message}
+</p>
 
 <form action="login" method="post">
 
@@ -33,6 +36,9 @@
 </form>
 
 <br>
+<a href="${pageContext.request.contextPath}/forgot-password">Quên mật khẩu?</a>
+
+<br><br>
 
 <!-- Google login -->
 <a href="https://accounts.google.com/o/oauth2/v2/auth

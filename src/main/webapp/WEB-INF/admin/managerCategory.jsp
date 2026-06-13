@@ -231,6 +231,7 @@
         })
           .then((res) => res.json())
           .then((result) => {
+            console.log(result)
             if (result.success) {
               confirmModal.hide();
               alert(result.message);
@@ -244,3 +245,4 @@
     </script>
   </body>
 </html>
+

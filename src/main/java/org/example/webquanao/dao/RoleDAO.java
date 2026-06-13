@@ -9,6 +9,18 @@ import java.util.List;
 public class RoleDAO {
     private Jdbi jdbi = DBConnect.get();
 
+    public List<Role> findAll() {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                        SELECT *
+                        FROM roles
+                        ORDER BY id
+                """)
+                        .mapToBean(Role.class)
+                        .list()
+        );
+    }
+
     public Role findByName(String name) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("SELECT * FROM roles WHERE name = :name")

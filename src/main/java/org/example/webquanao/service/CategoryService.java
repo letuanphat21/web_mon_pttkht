@@ -2,8 +2,11 @@ package org.example.webquanao.service;
 
 import org.example.webquanao.action.Result;
 import org.example.webquanao.dao.CategoryDAO;
+import org.example.webquanao.dto.request.CategoryRequest;
+import org.example.webquanao.dto.response.CategoryResponse;
 import org.example.webquanao.entity.Category;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,85 +15,87 @@ public class CategoryService {
 
     private CategoryDAO categoryDAO = new CategoryDAO();
 
-
     public Result getAllCategory() {
-        Map<String,Object> data = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
 
-        try{
+        try {
             List<Category> categorys = categoryDAO.findAll();
-            data.put("categorys",categorys);
-        }catch (Exception e){
+            List<CategoryResponse> responses = new ArrayList<>();
+            for (Category c : categorys) {
+                responses.add(new CategoryResponse(c.getId(), c.getName(), c.isActive()));
+            }
+            data.put("categorys", responses);
+        } catch (Exception e) {
             e.printStackTrace();
-            return Result.fail("Lấy danh sách thất bại");
+            return Result.fail("Lay danh sach that bai");
         }
 
-        return Result.ok("Lấy danh sách thành công ", data);
+        return Result.ok("Lay danh sach thanh cong", data);
     }
 
-    public Result addCategory(Category category) {
-        // try {
-
-            Category ct = categoryDAO.findByName(category.getName());
+    public Result addCategory(CategoryRequest dto) {
+        try {
+            Category ct = categoryDAO.findByName(dto.getName());
 
             if (ct != null) {
-                return Result.fail("Tên danh mục đã tồn tại");
+                return Result.fail("Ten danh muc da ton tai");
             }
 
+            Category category = new Category();
+            category.setName(dto.getName());
             category.setActive(true);
+            
             categoryDAO.insert(category);
 
-            return Result.ok("Thêm danh mục thành công", null);
-
-        // } catch (Exception e) {
-        //     e.printStackTrace();
-        //     return Result.fail("Lỗi hệ thống khi thêm danh mục");
-        // }
+            return Result.ok("Them danh muc thanh cong", null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.fail("Loi he thong khi them danh muc");
+        }
     }
 
-    public Result updateCategory(Category category) {
+    public Result updateCategory(CategoryRequest dto) {
         try {
-
-            Category existing = categoryDAO.findById(category.getId());
+            Category existing = categoryDAO.findById(dto.getId());
 
             if (existing == null) {
-                return Result.fail("Không tìm thấy danh mục");
+                return Result.fail("Khong tim thay danh muc");
             }
 
-            Category ct = categoryDAO.findByName(category.getName());
+            Category ct = categoryDAO.findByName(dto.getName());
 
-            if (ct != null && ct.getId() != category.getId()) {
+            if (ct != null && ct.getId() != dto.getId()) {
                 return Result.fail("Tên danh mục đã tồn tại");
             }
 
-            existing.setName(category.getName());
-            existing.setActive(category.isActive());
+            existing.setName(dto.getName());
+            existing.setActive(dto.isActive());
 
             categoryDAO.update(existing);
 
-            return Result.ok("Cập nhật danh mục thành công", null);
-
+            return Result.ok("Cap nhat danh muc thanh cong", null);
         } catch (Exception e) {
             e.printStackTrace();
-            return Result.fail("Cập nhật danh mục thất bại");
+            return Result.fail("Cap nhat danh muc that bai");
         }
     }
 
     public Result toggleCategoryStatus(int id) {
-        // try {
-             Category existing = categoryDAO.findById(id);
+        try {
+            Category existing = categoryDAO.findById(id);
             if (existing != null) {
                 if (existing.isActive()) {
                     categoryDAO.deactivate(id);
                 } else {
                     categoryDAO.activate(id);
                 }
-                return Result.ok("Thay đổi trạng thái thành công", null);
+                return Result.ok("Thay doi trang thai thanh cong", null);
             }
-            return Result.fail("Không tìm thấy danh mục");
-        // } catch (Exception e) {
-        //     e.printStackTrace();
-        //     return Result.fail("Thay đổi trạng thái thất bại");
-        // }
+            return Result.fail("Khong tim thay danh muc");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.fail("Thay doi trang thai that bai");
+        }
     }
 
 }
