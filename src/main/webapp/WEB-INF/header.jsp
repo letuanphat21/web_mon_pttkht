@@ -33,7 +33,7 @@
                 <a href="${pageContext.request.contextPath}/cart" style="text-decoration: none; color: #333; position: relative; font-weight: 500;">
                     <span style="font-size: 20px;">🛒</span> Giỏ hàng
 
-                    <span id="cart-count" style="
+                    <span id="cart-badge" style="
                         background: red;
                         color: white;
                         border-radius: 50%;
@@ -43,8 +43,12 @@
                         top: -10px;
                         right: -15px;">
                         <c:choose>
+                            <c:when test="${not empty sessionScope.userId}">
+                                <c:out value="${sessionScope.totalCartCount}" default="0"/>
+                            </c:when>
+
                             <c:when test="${not empty sessionScope.cart}">
-                                ${fn:length(sessionScope.cart)}
+                                ${fn:length(sessionScope.cart.items)}
                             </c:when>
                             <c:otherwise>0</c:otherwise>
                         </c:choose>

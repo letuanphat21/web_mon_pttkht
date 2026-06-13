@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -17,10 +18,10 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-white fw-bold">Thông tin nhận hàng</div>
                 <div class="card-body">
-                    <p><strong>Người nhận:</strong> ${sessionScope.pendingOrder.fullName}</p>
-                    <p><strong>Số điện thoại:</strong> ${sessionScope.pendingOrder.phone}</p>
-                    <p><strong>Địa chỉ:</strong> ${sessionScope.pendingOrder.address}</p>
-                    <a href="${pageContext.request.contextPath}/cart?edit=true" class="btn btn-sm btn-outline-primary">
+                    <p><strong>Người nhận:</strong> ${sessionScope.checkoutShipping.fullName}</p>
+                    <p><strong>Số điện thoại:</strong> ${sessionScope.checkoutShipping.phone}</p>
+                    <p><strong>Địa chỉ:</strong> ${sessionScope.checkoutShipping.address}</p>
+                    <a href="${pageContext.request.contextPath}/order-process?action=editShipping" class="btn btn-sm btn-outline-primary">
                         Chỉnh sửa thông tin
                     </a>
                 </div>
@@ -40,18 +41,18 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <c:forEach var="entry" items="${sessionScope.cart}">
-                            <c:set var="item" value="${entry.value}"/>
+                        <c:forEach var="item" items="${sessionScope.checkoutCart.cartItems}">
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="${item.productImage}" width="40" class="me-2">
-                                        <span>${item.productName}</span>
+                                            <%-- Dùng item.name vì class CartItemResponse có getName() --%>
+                                        <span>${item.name}</span>
                                     </div>
                                 </td>
-                                <td class="text-center">${item.quantity}</td>
+                                    <%-- Dùng item.qty vì class CartItemResponse có getQty() --%>
+                                <td class="text-center">${item.qty}</td>
                                 <td class="text-end">
-                                    <fmt:formatNumber value="${item.totalAmount}" pattern="#,###"/> VNĐ
+                                    <fmt:formatNumber value="${item.subTotal}" pattern="#,###"/> VNĐ
                                 </td>
                             </tr>
                         </c:forEach>
@@ -60,14 +61,16 @@
                         <tr>
                             <td colspan="2" class="fw-bold text-end">Tổng cộng:</td>
                             <td class="text-end fw-bold text-danger fs-5">
-                                <fmt:formatNumber value="${sessionScope.pendingOrder.totalPrice}" pattern="#,###"/> VNĐ
+                                <fmt:formatNumber value="${sessionScope.checkoutCart.totalAmount}" pattern="#,###"/> VNĐ
                             </td>
                         </tr>
                         </tfoot>
                     </table>
                 </div>
+
                 <div class="card-footer d-grid">
-                    <form action="order-confirm" method="post">
+                    <form action="order-process" method="post">
+                        <input type="hidden" name="action" value="prepareOrder">
                         <button type="submit" class="btn btn-success btn-lg w-100">Xác nhận đặt hàng</button>
                     </form>
                 </div>

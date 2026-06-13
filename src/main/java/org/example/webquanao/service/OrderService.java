@@ -1,35 +1,98 @@
 package org.example.webquanao.service;
 
 import org.example.webquanao.dao.OrderDAO;
+import org.example.webquanao.dto.request.CheckoutRequest;
+import org.example.webquanao.dto.response.CartPageResponse;
+import org.example.webquanao.dto.response.CartPageResponse.CartItemResponse;
+import org.example.webquanao.dto.response.OrderDetailResponse;
+import org.example.webquanao.dto.response.OrderResponse;
 import org.example.webquanao.entity.Order;
 import org.example.webquanao.entity.OrderDetail;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class OrderService {
-    private OrderDAO orderDAO = new OrderDAO();
+    private final OrderDAO orderDAO = new OrderDAO();
 
-    public String validateShippingInfo(String phone, String address) {
-        if (phone == null || !phone.matches("^0\\d{9}$")) {
-            return "Số điện thoại không hợp lệ (Phải bắt đầu bằng 0 và gồm 10 chữ số).";
+    /**
+     * LUỒNG 9 -> 13: Xác thực thông tin giao hàng dựa trên DTO đầu vào (BR1.28-1)
+     */
+    public Map<String, String> validateShippingInfo(CheckoutRequest request) {
+        Map<String, String> errors = new HashMap<>();
+
+        if (request.getFullName() == null || request.getFullName().trim().isEmpty()) {
+            errors.put("fullName", "Họ và tên người nhận không được để trống.");
         }
-        if (address == null || address.trim().isEmpty()) {
-            return "Địa chỉ giao hàng không được để trống.";
+
+        if (request.getPhone() == null || !request.getPhone().matches("^0\\d{9}$")) {
+            errors.put("phone", "Số điện thoại không hợp lệ (Phải bắt đầu bằng 0 và gồm 10 chữ số).");
         }
-        return "VALID";
+
+        if (request.getAddress() == null || request.getAddress().trim().isEmpty()) {
+            errors.put("address", "Địa chỉ giao hàng không được để trống.");
+        }
+
+        return errors;
     }
 
-    public boolean processCheckout(Order order, List<OrderDetail> details) {
-        String uniqueOrderId = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        order.setOrderId(uniqueOrderId);
+    /**
+     * LUỒNG 15: Tạo lập đơn hàng hoàn chỉnh vào hệ thống Cơ sở dữ liệu
+     */
+    public OrderResponse createOrder(int userId, CartPageResponse cartResponse, CheckoutRequest checkoutRequest) throws Exception {
+        // 1. Tạo chuỗi mã đơn hàng ngẫu nhiên duy nhất
+        String uniqueOrderIdStr = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        // 2. Thiết lập thực thể Entity Order gốc để lưu xuống DB qua DAO cũ
+        Order order = new Order();
+        order.setOrderId(uniqueOrderIdStr);
+        order.setUserId(userId);
+        order.setFullName(checkoutRequest.getFullName());
+        order.setPhone(checkoutRequest.getPhone());
+        order.setAddress(checkoutRequest.getAddress());
+        order.setTotalPrice(cartResponse.getTotalAmount());
         order.setStatus("Chờ xác nhận");
-        for (OrderDetail item : details) {
-            item.setOrderId(uniqueOrderId);
+
+        // 3. Duyệt chuyển đổi danh sách từ CartItemResponse sang OrderDetail thực thể
+        List<OrderDetail> dbDetailsList = new ArrayList<>();
+        List<OrderDetailResponse> dtoDetailsList = new ArrayList<>();
+
+        for (CartItemResponse item : cartResponse.getCartItems()) {
+            // Đối tượng thực thể ghi xuống DB
+            OrderDetail detail = new OrderDetail();
+            detail.setOrderId(uniqueOrderIdStr);
+            detail.setProductId(item.getId());
+            detail.setQuantity(item.getQty());
+            detail.setPrice(item.getPrice());
+            dbDetailsList.add(detail);
+
+            // Đối tượng DTO đóng gói trả về phía Controller hiển thị
+            OrderDetailResponse dtoDetail = new OrderDetailResponse(item);
+            dtoDetailsList.add(dtoDetail);
         }
-        return orderDAO.insertOrder(order, details);
+
+        // 4. Gọi tầng DAO thực thi lưu trữ xuống Database bằng Transaction liên hoàn
+        boolean isSuccess = orderDAO.insertOrder(order, dbDetailsList);
+
+        if (!isSuccess) {
+            // Trả về null ứng với Ngoại lệ E16c (Hệ thống bận / Lỗi kết nối DB)
+            return null;
+        }
+
+        // 5. Khởi tạo đối tượng DTO OrderResponse hoàn chỉnh truyền ra cho Controller (Bước 15)
+        // Vì DAO cũ của bạn thiết lập Id là chuỗi String (UUID), ta bóc tách mã băm thành số int
+        // hoặc chuyển đổi phù hợp để tương thích cấu trúc OrderResponse(int, list, checkoutRequest)
+        int numericOrderId = Math.abs(uniqueOrderIdStr.hashCode());
+
+        return new OrderResponse(numericOrderId, dtoDetailsList, checkoutRequest);
     }
 
+    // =========================================================================
+    // CÁC PHƯƠNG THỨC QUẢN LÝ ĐƠN HÀNG CŨ (Giữ nguyên tính năng)
+    // =========================================================================
     public Order getOrderById(String orderId) {
         return orderDAO.findById(orderId);
     }
@@ -45,12 +108,10 @@ public class OrderService {
     public String cancelOrder(String orderId, int userId) {
         Order order = orderDAO.findById(orderId);
 
-        // NFR1.29-1. Kiểm tra quyền sở hữu đơn hàng
         if (order == null || order.getUserId() != userId) {
             return "Bạn không có quyền thực hiện thao tác này.";
         }
 
-        // BR1.29-1 & E7a1. Chỉ cho phép hủy khi ở trạng thái "Chờ xác nhận"
         if (!"Chờ xác nhận".equals(order.getStatus())) {
             return "Đơn hàng đang trong quá trình xử lý hoặc vận chuyển, không thể hủy.";
         }
