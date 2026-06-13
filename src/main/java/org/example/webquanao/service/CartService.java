@@ -257,6 +257,62 @@ public class CartService {
         return new CartResponse("Thêm sản phẩm thành công", totalCount);
     }
 
+    public CartPageResponse getSelectedItemsCart(int userId) throws Exception {
+        List<CartItem> dbItems = cartDAO.getCartItemsByUserId(userId);
+
+        // Tính tổng tiền lọc riêng các sản phẩm có is_selected = true
+        double totalSelectedAmount = dbItems.stream()
+                .filter(CartItem::isSelected)
+                .mapToDouble(item -> item.getProduct().getProductPrice() * item.getQuantity())
+                .sum();
+
+        CartPageResponse selectedCartResponse = new CartPageResponse(totalSelectedAmount);
+
+        // Đổ dữ liệu đã lọc sang cấu trúc DTO gửi đi
+        for (CartItem item : dbItems) {
+            if (item.isSelected()) {
+                CartPageResponse.CartItemResponse itemDTO = new CartPageResponse.CartItemResponse(
+                        item.getProduct().getProductId(),
+                        item.getProduct().getProductName(),
+                        item.getProduct().getProductPrice(),
+                        item.getQuantity(),
+                        item.getProduct().getProductPrice() * item.getQuantity(),
+                        item.isSelected()
+                );
+                selectedCartResponse.addCartItem(itemDTO);
+            }
+        }
+        return selectedCartResponse;
+    }
+
+    /**
+     * LUỒNG NGOẠI LỆ E6b: Kiểm tra trạng thái tồn kho thực tế của các sản phẩm khách muốn đặt mua
+     */
+    public boolean validateItemsStock(List<CartPageResponse.CartItemResponse> checkedItems) throws Exception {
+        for (CartPageResponse.CartItemResponse item : checkedItems) {
+            // Lấy thực thể sản phẩm hiện tại trong kho thông qua Service bổ trợ có sẵn của bạn
+            Product currentProduct = productService.findById(item.getId());
+
+            // Nếu sản phẩm không tồn tại, bị ẩn hoặc số lượng khách mua vượt quá lượng tồn kho thực tế
+            if (currentProduct == null || item.getQty() > currentProduct.getQuantity()) {
+                return true; // Xác nhận: Có sản phẩm không hợp lệ (hasInvalidItem = true)
+            }
+        }
+        return false; // Toàn bộ sản phẩm đều đảm bảo số lượng tồn kho
+    }
+
+    /**
+     * POST-CONDITION LUỒNG 16: Tiến hành dọn dẹp sạch các sản phẩm đã thanh toán thành công khỏi Giỏ hàng DB
+     */
+    public void clearPurchasedItems(int userId, CartPageResponse purchasedCart) throws Exception {
+        int cartId = cartDAO.getOrCreateCartId(userId);
+
+        // Duyệt qua danh sách các sản phẩm vừa chốt mua để xóa lệnh hàng loạt dưới SQL
+        for (CartPageResponse.CartItemResponse purchasedItem : purchasedCart.getCartItems()) {
+            cartDAO.deleteCartItem(cartId, purchasedItem.getId());
+        }
+    }
+
     public static class CartComputation {
         private final double itemTotal;
         private final double cartTotal;
@@ -269,4 +325,6 @@ public class CartService {
         public double getItemTotal() { return itemTotal; }
         public double getCartTotal() { return cartTotal; }
     }
+
+
 }

@@ -111,6 +111,7 @@
                         <div id="ajax-error-info" class="alert alert-danger d-none"></div>
 
                         <form action="order-process" method="post">
+                            <input type="hidden" name="action" value="validateShipping">
                             <div class="mb-3">
                                 <label for="fullName" class="form-label fw-bold">Họ và tên người nhận</label>
                                 <input type="text" class="form-control" name="fullName"
