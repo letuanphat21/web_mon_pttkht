@@ -7,6 +7,7 @@ import org.example.webquanao.action.Result;
 import org.example.webquanao.dto.request.LoginRequest;
 import org.example.webquanao.dto.response.LoginResponse;
 import org.example.webquanao.service.AuthService;
+import org.example.webquanao.service.CartService;
 
 import java.io.IOException;
 import java.util.List;
@@ -14,9 +15,11 @@ import java.util.List;
 @WebServlet(name = "LoginController", value = "/login")
 public class LoginController extends HttpServlet {
     private AuthService authService;
+    private CartService cartService;
 
     @Override
     public void init() {
+        cartService = new CartService();
         authService = new AuthService();
     }
     @Override
@@ -55,6 +58,11 @@ public class LoginController extends HttpServlet {
             session.setAttribute("email", email);
             session.setAttribute("roles", roles);
 
+            try {
+                cartService.mergeCartOnLogin(userId, session);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             // kiểm tra role
             boolean isAdmin = roles.stream().anyMatch(r -> r.equals("ADMIN"));

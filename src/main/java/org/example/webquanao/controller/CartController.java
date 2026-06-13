@@ -1,55 +1,86 @@
 package org.example.webquanao.controller;
 
-import org.example.webquanao.entity.CartItem;
-import org.example.webquanao.entity.Product;
+import org.example.webquanao.dto.request.AddToCartRequest;
+import org.example.webquanao.dto.response.CartResponse;
 import org.example.webquanao.service.CartService;
-import org.example.webquanao.dao.ProductDAO;
-import jakarta.servlet.annotation.*;
-import jakarta.servlet.http.*;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
-@WebServlet("/add-to-cart")
+@WebServlet("/cart/add")
 public class CartController extends HttpServlet {
-    private CartService cartService = new CartService();
-    private ProductDAO productDAO = new ProductDAO();
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    private CartService cartService = new CartService();
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
         try {
-            // 1 & 2. Lấy thông tin từ ProductPage (productId và quantity)
-            int pId = Integer.parseInt(request.getParameter("productId"));
-            int qty = Integer.parseInt(request.getParameter("quantity"));
+            //  Tiếp nhận thông tin qua fetch gửi lên từ cart.js
+            int productId = Integer.parseInt(request.getParameter("productId"));
+            int quantity = Integer.parseInt(request.getParameter("quantity"));
 
-            // Pre-Condition: Sản phẩm phải còn tồn tại trong hệ thống
-            Product p = productDAO.findById(pId);
+            // Đóng gói dữ liệu đầu vào thông qua Request DTO
+            AddToCartRequest reqAdd = new AddToCartRequest(productId, quantity);
+            HttpSession session = request.getSession();
 
-            if (p != null) {
+            // Gọi tầng Service xử lý nghiệp vụ chính
+            Object serviceResult = cartService.addToCart(reqAdd, session);
 
-                // 4. Cập nhật thông tin giỏ hàng tạm thời vào Session (Post-condition)
-                HttpSession session = request.getSession();
-                Map<Integer, CartItem> cart = (Map<Integer, CartItem>) session.getAttribute("cart");
-                if (cart == null) cart = new HashMap<>();
-
-                // Gọi service xử lý logic 4a (cộng dồn) hoặc 4b (tạo mới)
-                cartService.addToCart(cart, p, qty);
-                session.setAttribute("cart", cart);
-
-                // NFR1.27-2: Tính toán tổng số loại sản phẩm trong giỏ để cập nhật Header
-                int totalQty = cart.size();
-                response.getWriter().print("{\"status\":\"success\", \"totalQty\":" + totalQty + "}");
-            } else {
+            // Kiểm tra phân nhánh kết quả trả về từ Service
+            if (serviceResult instanceof String) {
+                String status = (String) serviceResult;
                 response.setStatus(400);
-                response.getWriter().print("{\"status\":\"error\", \"message\":\"Sản phẩm không tồn tại\"}");
-            }
-        } catch (Exception e) {
 
-            // Exception Flow E: Lỗi hệ thống hoặc kết nối
+                switch (status) {
+                    case "INVALID_QUANTITY":
+                        // Bước 7) Trả về mã lỗi số lượng <= 0
+                        response.getWriter().print("{\"status\":\"INVALID_QUANTITY\", \"message\":\"Số lượng mua phải là số dương\"}");
+                        break;
+                    case "STOCK_EXCEEDED":
+                        // Bước 11) Trả về mã lỗi vượt quá số lượng kho hiện tại của hệ thống
+                        response.getWriter().print("{\"status\":\"STOCK_EXCEEDED\", \"message\":\"Số lượng vượt quá tồn kho hệ thống\"}");
+                        break;
+                    default:
+                        // Luồng E: Trục trặc không rõ nguyên nhân
+                        response.setStatus(500);
+                        response.getWriter().print("{\"status\":\"CONNECTION_ERROR\", \"message\":\"Lỗi hệ thống hoặc kết nối dữ liệu thất bại\"}");
+                        break;
+                }
+            } else {
+                // Ép kiểu về DTO phản hồi thành công nhận được từ Service
+                CartResponse resCart = (CartResponse) serviceResult;
+
+                // ĐỒNG BỘ: Nếu là thành viên (User) đã đăng nhập, lưu số lượng tổng vào Session
+                Integer userId = (Integer) session.getAttribute("userId");
+                if (userId != null) {
+                    session.setAttribute("totalCartCount", resCart.getTotalCount());
+                }
+
+                // Bước 35) Trả về chuỗi JSON thành công kèm tổng số lượng mặt hàng mới
+                response.setStatus(200);
+                response.getWriter().print("{"
+                        + "\"status\":\"success\","
+                        + "\"message\":\"" + resCart.getMessage() + "\","
+                        + "\"totalCount\":" + resCart.getTotalCount()
+                        + "}");
+            }
+
+        } catch (NumberFormatException e) {
+            response.setStatus(400);
+            response.getWriter().print("{\"status\":\"INVALID_DATA\", \"message\":\"Dữ liệu đầu vào không hợp lệ\"}");
+        } catch (Exception e) {
+            // Luồng ngoại lệ E: Hệ thống xảy ra lỗi Crash ngoài ý muốn
             response.setStatus(500);
-            response.getWriter().print("{\"status\":\"error\", \"message\":\"Lỗi hệ thống\"}");
+            response.getWriter().print("{\"status\":\"CONNECTION_ERROR\", \"message\":\"Hệ thống không phản hồi, vui lòng thử lại sau\"}");
         }
     }
 }

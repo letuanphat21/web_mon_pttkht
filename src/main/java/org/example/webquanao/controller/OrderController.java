@@ -78,7 +78,7 @@ public class OrderController extends HttpServlet {
         pendingOrder.setFullName(name);
         pendingOrder.setPhone(phone);
         pendingOrder.setAddress(address);
-        pendingOrder.setTotalPrice(cartService.calculateTotalCart(cart));
+        //pendingOrder.setTotalPrice(cartService.calculateTotalCart(cart));
 
         session.setAttribute("pendingOrder", pendingOrder);
         response.sendRedirect(request.getContextPath() + "/order-process?action=review");
