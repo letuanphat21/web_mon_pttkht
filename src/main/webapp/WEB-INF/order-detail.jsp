@@ -5,13 +5,13 @@
 <div class="row">
     <div class="col-md-5">
         <h6 class="fw-bold">Thông tin nhận hàng</h6>
-        <p class="small mb-1">Người nhận: <strong>${order.fullName}</strong></p>
-        <p class="small mb-1">SĐT: <strong>${order.phone}</strong></p>
-        <p class="small">Địa chỉ: <strong>${order.address}</strong></p>
+        <p class="small mb-1">Người nhận: <strong>${orderDetail.fullName}</strong></p>
+        <p class="small mb-1">SĐT: <strong>${orderDetail.phone}</strong></p>
+        <p class="small">Địa chỉ: <strong>${orderDetail.address}</strong></p>
     </div>
     <div class="col-md-7 text-end">
-        <h6 class="fw-bold">Trạng thái: <span class="text-primary">${order.status}</span></h6>
-        <p class="small">Ngày đặt: <fmt:formatDate value="${order.createdAt}" pattern="dd/MM/yyyy HH:mm"/></p>
+        <h6 class="fw-bold">Trạng thái: <span class="text-primary">${orderDetail.status}</span></h6>
+        <p class="small">Ngày đặt: <fmt:formatDate value="${orderDetail.createdAt}" pattern="dd/MM/yyyy HH:mm"/></p>
     </div>
 </div>
 <hr>
@@ -25,19 +25,22 @@
     </tr>
     </thead>
     <tbody>
-    <c:forEach var="item" items="${details}">
+    <c:forEach var="item" items="${orderDetail.orderDetails}">
         <tr>
-            <td>Sản phẩm #${item.productId}</td>
-            <td><fmt:formatNumber value="${item.price}" pattern="#,###"/></td>
+            <td>
+                <img src="${item.productImage}" class="product-img-mini" alt="ảnh">
+                    ${item.productName}
+            </td>
+            <td><fmt:formatNumber value="${item.price}" pattern="#,###"/> đ</td>
             <td class="text-center">${item.quantity}</td>
-            <td class="text-end fw-bold"><fmt:formatNumber value="${item.price * item.quantity}" pattern="#,###"/> đ</td>
+            <td class="text-end fw-bold"><fmt:formatNumber value="${item.subTotal}" pattern="#,###"/> đ</td>
         </tr>
     </c:forEach>
     </tbody>
     <tfoot>
     <tr>
         <td colspan="3" class="text-end fw-bold">Tổng cộng:</td>
-        <td class="text-end text-danger fw-bold fs-5"><fmt:formatNumber value="${order.totalPrice}" pattern="#,###"/> đ</td>
+        <td class="text-end text-danger fw-bold fs-5"><fmt:formatNumber value="${orderDetail.totalPrice}" pattern="#,###"/> đ</td>
     </tr>
     </tfoot>
 </table>

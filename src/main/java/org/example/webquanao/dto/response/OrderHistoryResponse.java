@@ -1,10 +1,10 @@
-package org.example.webquanao.entity;
+package org.example.webquanao.dto.response;
 
+import org.example.webquanao.entity.Order;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.List;
 
-public class Order {
+public class OrderHistoryResponse {
     private String orderId;
     private int userId;
     private String fullName;
@@ -13,27 +13,26 @@ public class Order {
     private double totalPrice;
     private String status;
     private Timestamp createdAt;
-
     private String cancelReason;
-    private List<OrderDetail> orderDetails = new ArrayList<>();
 
-    public Order() {}
+    private List<OrderDetailHistoryResponse> orderDetails;
 
-    public Order(String orderId, int userId, String fullName, String phone, String address, double totalPrice) {
-        this.orderId = orderId;
-        this.userId = userId;
-        this.fullName = fullName;
-        this.phone = phone;
-        this.address = address;
-        this.totalPrice = totalPrice;
-        this.status = "Chờ xác nhận";
+    public OrderHistoryResponse() {}
+
+    public OrderHistoryResponse(Order order) {
+        this.orderId = order.getOrderId();
+        this.userId = order.getUserId();
+        this.fullName = order.getFullName();
+        this.phone = order.getPhone();
+        this.address = order.getAddress();
+        this.totalPrice = order.getTotalPrice();
+        this.status = order.getStatus();
+        this.createdAt = order.getCreatedAt();
+        this.cancelReason = order.getCancelReason();
     }
 
     public String getOrderId() { return orderId; }
     public void setOrderId(String orderId) { this.orderId = orderId; }
-
-    public int getUserId() { return userId; }
-    public void setUserId(int userId) { this.userId = userId; }
 
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
@@ -56,6 +55,17 @@ public class Order {
     public String getCancelReason() { return cancelReason; }
     public void setCancelReason(String cancelReason) { this.cancelReason = cancelReason; }
 
-    public List<OrderDetail> getOrderDetails() { return orderDetails; }
-    public void setOrderDetails(List<OrderDetail> orderDetails) { this.orderDetails = orderDetails;}
+    public List<OrderDetailHistoryResponse> getOrderDetails() { return orderDetails; }
+
+    public void setOrderDetails(List<OrderDetailHistoryResponse> orderDetails) {
+        this.orderDetails = orderDetails;
+    }
+
+    public int getUserId() {
+        return userId;
+    }
+
+    public void setUserId(int userId) {
+        this.userId = userId;
+    }
 }

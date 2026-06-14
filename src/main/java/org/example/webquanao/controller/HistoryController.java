@@ -21,7 +21,6 @@ public class HistoryController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
         HttpSession session = request.getSession();
         Object userIdObj = session.getAttribute("userId");
 
@@ -31,25 +30,23 @@ public class HistoryController extends HttpServlet {
         }
 
         int userId = Integer.parseInt(userIdObj.toString());
-
         String action = request.getParameter("action");
         String orderId = request.getParameter("id");
 
+        // LUỒNG 5: Trả về HTML Fragment
         if ("detail".equals(action) && orderId != null) {
-            Order order = orderService.getOrderById(orderId);
-            List<OrderDetail> details = orderService.getOrderDetails(orderId);
+            var orderDetail = orderService.getOrderDetailsForHistory(orderId);
 
-
-            if (order != null && order.getUserId() == userId) {
-                request.setAttribute("order", order);
-                request.setAttribute("details", details);
+            if (orderDetail != null && orderDetail.getUserId() == userId) {
+                request.setAttribute("orderDetail", orderDetail);
                 request.getRequestDispatcher("/WEB-INF/order-detail.jsp").forward(request, response);
             } else {
-                System.out.println("CẢNH BÁO: Sai UserId hoặc Order Null -> Trả về 403");
                 response.sendError(HttpServletResponse.SC_FORBIDDEN);
             }
-        } else {
-            List<Order> orders = orderService.getUserOrderHistory(userId);
+        }
+        // LUỒNG 1-4: Hiển thị danh sách đơn hàng
+        else {
+            var orders = orderService.getOrderHistoryList(userId);
             request.setAttribute("orders", orders);
             request.getRequestDispatcher("/WEB-INF/order-history.jsp").forward(request, response);
         }
@@ -58,7 +55,6 @@ public class HistoryController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
@@ -66,28 +62,25 @@ public class HistoryController extends HttpServlet {
         Object userIdObj = session.getAttribute("userId");
         String action = request.getParameter("action");
         String orderId = request.getParameter("orderId");
-
-        PrintWriter out = response.getWriter();
+        String reason = request.getParameter("reason");
 
         if (userIdObj == null) {
-            out.write("{\"status\": \"error\", \"message\": \"Phiên làm việc hết hạn.\"}");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
         int userId = Integer.parseInt(userIdObj.toString());
 
-        if ("cancel".equals(action) && orderId != null) {
-            String result = orderService.cancelOrder(orderId, userId);
+        // LUỒNG 6: Hủy đơn hàng
+        if ("confirm-cancel".equals(action) && orderId != null) {
+            String result = orderService.processCancelOrder(orderId, userId, reason);
 
+            PrintWriter out = response.getWriter();
             if ("SUCCESS".equals(result)) {
-                out.write("{\"status\": \"success\"}");
+                out.write("{\"status\": \"success\", \"msg\": \"Hủy đơn hàng thành công\"}");
             } else {
-                out.write("{\"status\": \"error\", \"message\": \"" + result + "\"}");
+                out.write("{\"status\": \"error\", \"msg\": \"" + result + "\"}");
             }
-        } else {
-            out.write("{\"status\": \"error\", \"message\": \"Yêu cầu không hợp lệ.\"}");
         }
-
-        out.flush(); // Đẩy dữ liệu đi và kết thúc response tại đây
     }
 }
