@@ -4,6 +4,7 @@ import org.example.webquanao.action.Result;
 import org.example.webquanao.dao.RoleDAO;
 import org.example.webquanao.dao.UserDAO;
 import org.example.webquanao.dao.UserRoleDAO;
+import org.example.webquanao.dto.response.UserProfileResponse;
 import org.example.webquanao.entity.Role;
 import org.example.webquanao.entity.User;
 import org.example.webquanao.utils.PasswordUtil;
@@ -176,5 +177,22 @@ public class UserService {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    public UserProfileResponse getUserProfile(int userId) {
+        try {
+            User user = userDAO.findById(userId);
+            if (user != null) {
+                return new org.example.webquanao.dto.response.UserProfileResponse(
+                        user.getId(),
+                        user.getFullName(),
+                        user.getPhone(),
+                        user.getAddress()
+                );
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
