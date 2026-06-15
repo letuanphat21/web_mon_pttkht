@@ -4,7 +4,11 @@ import org.jdbi.v3.core.mapper.reflect.ColumnName;
 
 public class OrderDetail {
     private int id;
+
+    @ColumnName("order_id")
     private String orderId;
+
+    @ColumnName("product_id")
     private int productId;
 
     private int quantity;
@@ -33,4 +37,8 @@ public class OrderDetail {
 
     public double getPrice() { return price; }
     public void setPrice(double price) { this.price = price; }
+
+    public double getSubTotal() {
+        return this.quantity * this.price;
+    }
 }
