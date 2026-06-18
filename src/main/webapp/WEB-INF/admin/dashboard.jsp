@@ -22,7 +22,7 @@
                 <a href="${pageContext.request.contextPath}/admin/dashboard" class="active">Dashboard</a>
                 <a href="${pageContext.request.contextPath}/admin/statistics">Thống kê</a>
                 <a href="${pageContext.request.contextPath}/admin/managerCategory">Quản lý Danh mục</a>
-                <a href="${pageContext.request.contextPath}/admin/invoice?action=list">Quản lý Hóa đơn</a>
+                <a href="${pageContext.request.contextPath}/admin/orders">Quản lý Đơn hàng</a>
                 <a href="${pageContext.request.contextPath}/admin/managerUser">Quản lý Người dùng</a>
                 <hr>
                 <a href="${pageContext.request.contextPath}/logout" class="text-danger">Đăng xuất</a>

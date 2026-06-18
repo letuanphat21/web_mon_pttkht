@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .cart-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        .cart-table th, .cart-table td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        .cart-table th, .cart-table td { border: 1px solid #ddd; padding: 12px; text-align: center; vertical-align: middle; }
         .total-section { text-align: right; margin-top: 20px; font-size: 1.2em; }
         .btn-delete { background: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; }
         .btn-delete:hover { background: #c82333; }
@@ -32,7 +32,7 @@
         <h2 class="mb-4">Giỏ hàng của bạn</h2>
 
         <c:choose>
-            <c:when test="${empty sessionScope.cart or fn:length(sessionScope.cart) == 0}">
+            <c:when test="${empty cartData or empty cartData.cartItems}">
                 <div class="text-center py-5">
                     <p class="fs-5 text-muted">Giỏ hàng đang trống!</p>
                     <a href="${pageContext.request.contextPath}/shop" class="btn btn-primary">Tiếp tục mua sắm</a>
@@ -42,8 +42,9 @@
                 <table class="cart-table">
                     <thead class="table-light">
                     <tr>
-                        <th>Hình ảnh</th>
+                        <th>Chọn mua</th>
                         <th>Sản phẩm</th>
+                        <th>Tên sản phẩm</th>
                         <th>Đơn giá</th>
                         <th>Số lượng</th>
                         <th>Thành tiền</th>
@@ -51,22 +52,27 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <c:forEach var="entry" items="${sessionScope.cart}">
-                        <c:set var="item" value="${entry.value}"/>
-                        <tr id="row-${item.productId}">
-                            <td><img src="${item.productImage}" width="60" alt="${item.productName}"></td>
-                            <td>${item.productName}</td>
-                            <td><fmt:formatNumber value="${item.unitPrice}" pattern="#,###"/> VNĐ</td>
+                    <c:forEach var="item" items="${cartData.cartItems}">
+                        <tr id="row-${item.id}">
                             <td>
-                                <input type="number" value="${item.quantity}"
-                                       min="1" style="width: 60px; padding: 5px;"
-                                       onchange="updateQuantityAjax(${item.productId}, this.value)">
+                                <input type="checkbox" class="form-check-input item-checkbox"
+                                    ${item.selected ? 'checked' : ''}
+                                       onclick="toggleSelectionAjax(${item.id}, this)">
                             </td>
-                            <td id="total-item-${item.productId}" class="fw-bold text-primary">
-                                <fmt:formatNumber value="${item.totalAmount}" pattern="#,###"/> VNĐ
+                            <td><img src="${pageContext.request.contextPath}/assets/images/default-clothes.jpg" width="60" alt="${item.name}"></td>
+                            <td><c:out value="${item.name}"/></td>
+                            <td><fmt:formatNumber value="${item.price}" pattern="#,###"/> VNĐ</td>
+                            <td>
+                                <input type="number" class="form-control d-inline-block text-center"
+                                       value="${item.qty}" min="0" style="width: 70px;"
+                                       data-last-valid="${item.qty}"
+                                       onchange="updateQuantityAjax(${item.id}, this)">
+                            </td>
+                            <td id="total-item-${item.id}" class="fw-bold text-primary">
+                                <fmt:formatNumber value="${item.subTotal}" pattern="#,###"/> VNĐ
                             </td>
                             <td>
-                                <button type="button" class="btn-delete" onclick="deleteItemAjax(${item.productId})">
+                                <button type="button" class="btn-delete" onclick="deleteItemAjax(${item.id})">
                                     Xóa
                                 </button>
                             </td>
@@ -77,9 +83,9 @@
 
                 <div class="total-section card p-3 shadow-sm">
                     <div>
-                        <strong>Tổng tiền dự kiến: </strong>
+                        <strong>Tổng tiền thanh toán dự kiến: </strong>
                         <span id="total-amount" class="text-danger fw-bold fs-3">
-                            <fmt:formatNumber value="${totalAmount}" pattern="#,###"/>
+                            <fmt:formatNumber value="${cartData.totalAmount}" pattern="#,###"/>
                         </span> VNĐ
                     </div>
                     <div class="mt-3">
@@ -105,6 +111,7 @@
                         <div id="ajax-error-info" class="alert alert-danger d-none"></div>
 
                         <form action="order-process" method="post">
+                            <input type="hidden" name="action" value="validateShipping">
                             <div class="mb-3">
                                 <label for="fullName" class="form-label fw-bold">Họ và tên người nhận</label>
                                 <input type="text" class="form-control" name="fullName"
@@ -151,10 +158,11 @@
         document.getElementById('order-info-container').style.display = 'none';
         window.scrollTo(0, 0);
     }
+
     document.addEventListener("DOMContentLoaded", function() {
         const urlParams = new URLSearchParams(window.location.search);
         const isEdit = urlParams.get('edit');
-        if (isEdit === 'true' || ${openOrderForm == true}) {
+        if (isEdit === 'true' || ${not empty openOrderForm and openOrderForm == true}) {
             const cartContainer = document.getElementById('cart-container');
             const infoContainer = document.getElementById('order-info-container');
 

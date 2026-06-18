@@ -182,7 +182,7 @@
         fetch('order-history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'action=cancel&orderId=' + id + '&reason=' + encodeURIComponent(reason)
+            body: 'action=confirm-cancel&orderId=' + id + '&reason=' + encodeURIComponent(reason)
         })
             .then(function(res) {
                 if (!res.ok) {

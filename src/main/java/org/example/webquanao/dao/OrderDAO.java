@@ -5,6 +5,7 @@ import org.example.webquanao.entity.Order;
 import org.example.webquanao.entity.OrderDetail;
 import org.jdbi.v3.core.Jdbi;
 import java.util.List;
+import java.util.Map;
 
 public class OrderDAO {
     private Jdbi jdbi;
@@ -67,6 +68,68 @@ public class OrderDAO {
     }
 
     public boolean updateOrderStatus(String orderId, String status) {
+        return getJdbi().withHandle(handle ->
+                handle.createUpdate("UPDATE orders SET status = :status WHERE order_id = :id")
+                        .bind("status", status)
+                        .bind("id", orderId)
+                        .execute() > 0
+        );
+    }
+
+    public boolean updateOrderStatusAndReason(String orderId, String status, String reason) {
+        return getJdbi().withHandle(handle ->
+                handle.createUpdate("UPDATE orders SET status = :status, cancel_reason = :reason WHERE order_id = :id")
+                        .bind("status", status)
+                        .bind("reason", reason)
+                        .bind("id", orderId)
+                        .execute() > 0
+        );
+    }
+
+    public boolean cancelOrderTransaction(String orderId, String reason, List<OrderDetail> details) {
+        try {
+            getJdbi().useTransaction(handle -> {
+                handle.createUpdate("UPDATE orders SET status = 'Đã hủy', cancel_reason = :reason WHERE order_id = :id")
+                        .bind("reason", reason)
+                        .bind("id", orderId)
+                        .execute();
+
+                for (OrderDetail item : details) {
+                    handle.createUpdate("UPDATE products SET quantity = quantity + :qty WHERE productId = :pid")
+                            .bind("qty", item.getQuantity())
+                            .bind("pid", item.getProductId())
+                            .execute();
+                }
+            });
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public List<Order> selectAllOrders() {
+        return getJdbi().withHandle(handle ->
+                handle.createQuery("SELECT * FROM orders ORDER BY created_at DESC")
+                        .map(org.jdbi.v3.core.mapper.reflect.BeanMapper.of(Order.class))
+                        .list()
+        );
+    }
+
+    public List<Map<String, Object>> getDetailsWithProductInfo(String orderId) {
+        return getJdbi().withHandle(handle ->
+                handle.createQuery(
+                                "SELECT od.*, p.productName, p.productImage " +
+                                        "FROM order_details od " +
+                                        "JOIN products p ON od.product_id = p.productId " +
+                                        "WHERE od.order_id = :orderId")
+                        .bind("orderId", orderId)
+                        .mapToMap()
+                        .list()
+        );
+    }
+
+    public boolean updateStatus(String orderId, String status) {
         return getJdbi().withHandle(handle ->
                 handle.createUpdate("UPDATE orders SET status = :status WHERE order_id = :id")
                         .bind("status", status)
