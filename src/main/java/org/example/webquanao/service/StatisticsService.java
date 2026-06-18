@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import org.example.webquanao.action.Result;
 import org.example.webquanao.dao.CategoryDAO;
 import org.example.webquanao.dao.StatisticsDAO;
+import org.example.webquanao.dto.request.StatisticRequest;
 import org.example.webquanao.dto.response.StatisticRowResponse;
 
 import java.sql.Timestamp;
@@ -19,10 +20,10 @@ public class StatisticsService {
     private final CategoryDAO categoryDAO = new CategoryDAO();
     private final Gson gson = new Gson();
 
-    public Result getReport(String type, String startDateRaw, String endDateRaw, String categoryIdRaw) {
-        String selectedType = normalizeType(type);
-        LocalDate startDate = parseDate(startDateRaw);
-        LocalDate endDate = parseDate(endDateRaw);
+    public Result getReport(StatisticRequest dto) {
+        String selectedType = normalizeType(dto.getType());
+        LocalDate startDate = parseDate(dto.getStartDate());
+        LocalDate endDate = parseDate(dto.getEndDate());
 
         if (startDate == null && endDate == null) {
             YearMonth currentMonth = YearMonth.now();
@@ -32,15 +33,19 @@ public class StatisticsService {
             return Result.fail("Dữ liệu không hợp lệ");
         }
 
-        Integer categoryId = parseCategoryId(categoryIdRaw);
+        Integer categoryId = parseCategoryId(dto.getCategoryId());
         Timestamp startAt = Timestamp.valueOf(startDate.atStartOfDay());
         Timestamp endAt = Timestamp.valueOf(endDate.plusDays(1).atStartOfDay());
 
         Map<String, Object> summary = statisticsDAO.getSummary(startAt, endAt, categoryId);
-        List<StatisticRowResponse> dailyRevenue = statisticsDAO.getDailyRevenue(startAt, endAt, categoryId);
-        List<StatisticRowResponse> topProducts = statisticsDAO.getTopProducts(startAt, endAt, categoryId);
-        List<StatisticRowResponse> categoryRevenue = statisticsDAO.getRevenueByCategory(startAt, endAt, categoryId);
-        List<StatisticRowResponse> orderStatuses = statisticsDAO.getOrderStatusCounts(startAt, endAt);
+        List<StatisticRowResponse> dailyRevenue = toDailyRevenueResponses(
+                statisticsDAO.getDailyRevenue(startAt, endAt, categoryId));
+        List<StatisticRowResponse> topProducts = toTopProductResponses(
+                statisticsDAO.getTopProducts(startAt, endAt, categoryId));
+        List<StatisticRowResponse> categoryRevenue = toCategoryRevenueResponses(
+                statisticsDAO.getRevenueByCategory(startAt, endAt, categoryId));
+        List<StatisticRowResponse> orderStatuses = toOrderStatusResponses(
+                statisticsDAO.getOrderStatusCounts(startAt, endAt));
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("type", selectedType);
@@ -121,6 +126,59 @@ public class StatisticsService {
         charts.put("categoryLabels", categoryRevenue.stream().map(StatisticRowResponse::getCategoryName).toList());
         charts.put("categoryRevenue", categoryRevenue.stream().map(StatisticRowResponse::getRevenue).toList());
         return gson.toJson(charts);
+    }
+
+    private List<StatisticRowResponse> toDailyRevenueResponses(List<Map<String, Object>> rows) {
+        return rows.stream().map(row -> {
+            StatisticRowResponse response = new StatisticRowResponse();
+            response.setLabel(asString(row.get("label")));
+            response.setOrderCount(asInt(row.get("orderCount")));
+            response.setRevenue(asDouble(row.get("revenue")));
+            return response;
+        }).toList();
+    }
+
+    private List<StatisticRowResponse> toTopProductResponses(List<Map<String, Object>> rows) {
+        return rows.stream().map(row -> {
+            StatisticRowResponse response = new StatisticRowResponse();
+            response.setProductId(asInt(row.get("productId")));
+            response.setProductName(asString(row.get("productName")));
+            response.setCategoryName(asString(row.get("categoryName")));
+            response.setSoldQuantity(asInt(row.get("soldQuantity")));
+            response.setRevenue(asDouble(row.get("revenue")));
+            return response;
+        }).toList();
+    }
+
+    private List<StatisticRowResponse> toCategoryRevenueResponses(List<Map<String, Object>> rows) {
+        return rows.stream().map(row -> {
+            StatisticRowResponse response = new StatisticRowResponse();
+            response.setCategoryName(asString(row.get("categoryName")));
+            response.setSoldQuantity(asInt(row.get("soldQuantity")));
+            response.setRevenue(asDouble(row.get("revenue")));
+            return response;
+        }).toList();
+    }
+
+    private List<StatisticRowResponse> toOrderStatusResponses(List<Map<String, Object>> rows) {
+        return rows.stream().map(row -> {
+            StatisticRowResponse response = new StatisticRowResponse();
+            response.setStatus(asString(row.get("status")));
+            response.setOrderCount(asInt(row.get("orderCount")));
+            return response;
+        }).toList();
+    }
+
+    private String asString(Object value) {
+        return value == null ? "" : value.toString();
+    }
+
+    private int asInt(Object value) {
+        return value instanceof Number number ? number.intValue() : 0;
+    }
+
+    private double asDouble(Object value) {
+        return value instanceof Number number ? number.doubleValue() : 0;
     }
 
     private String normalizeType(String type) {

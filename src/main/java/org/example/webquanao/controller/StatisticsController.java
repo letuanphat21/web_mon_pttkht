@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.example.webquanao.action.Result;
+import org.example.webquanao.dto.request.StatisticRequest;
 import org.example.webquanao.service.StatisticsService;
 
 import java.io.IOException;
@@ -30,16 +31,12 @@ public class StatisticsController extends HttpServlet {
             return;
         }
 
-        Result result = statisticsService.getReport(
-                request.getParameter("type"),
-                request.getParameter("startDate"),
-                request.getParameter("endDate"),
-                request.getParameter("categoryId")
-        );
+        StatisticRequest statisticRequest = buildStatisticRequest(request);
+        Result result = statisticsService.getReport(statisticRequest);
 
         if (!result.isSuccess()) {
             request.setAttribute("error", result.getMessage());
-            Result defaultResult = statisticsService.getReport(null, null, null, null);
+            Result defaultResult = statisticsService.getReport(new StatisticRequest());
             applyReportData(request, defaultResult.getData());
             request.getRequestDispatcher("/WEB-INF/admin/statistics.jsp").forward(request, response);
             return;
@@ -57,6 +54,15 @@ public class StatisticsController extends HttpServlet {
         }
 
         request.getRequestDispatcher("/WEB-INF/admin/statistics.jsp").forward(request, response);
+    }
+
+    private StatisticRequest buildStatisticRequest(HttpServletRequest request) {
+        return new StatisticRequest(
+                request.getParameter("type"),
+                request.getParameter("startDate"),
+                request.getParameter("endDate"),
+                request.getParameter("categoryId")
+        );
     }
 
     private void applyReportData(HttpServletRequest request, Map<String, Object> data) {
