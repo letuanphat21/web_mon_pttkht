@@ -313,6 +313,11 @@ public class CartService {
         }
     }
 
+    public int getTotalCartCount(int userId) {
+        // Xuống CartDAO gọi hàm đếm tổng quantity của các item thuộc về userId này
+        return cartDAO.sumQuantityByUserId(userId);
+    }
+
     public static class CartComputation {
         private final double itemTotal;
         private final double cartTotal;

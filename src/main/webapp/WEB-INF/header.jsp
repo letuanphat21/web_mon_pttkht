@@ -7,15 +7,15 @@
     <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto;">
 
         <div class="logo">
-            <a href="${pageContext.request.contextPath}/shop" style="text-decoration: none; font-size: 24px; font-weight: bold; color: #333;">
+            <a href="${pageContext.request.contextPath}/" style="text-decoration: none; font-size: 24px; font-weight: bold; color: #333;">
                 WebQuầnÁo
             </a>
         </div>
 
         <nav>
             <ul style="list-style: none; display: flex; gap: 20px; margin: 0;">
-                <li><a href="${pageContext.request.contextPath}/shop" style="text-decoration: none; color: #333;">Trang chủ</a></li>
-                <li><a href="#" style="text-decoration: none; color: #333;">Sản phẩm</a></li>
+                <li><a href="${pageContext.request.contextPath}/" style="text-decoration: none; color: #333;">Trang chủ</a></li>
+                <li><a href="${pageContext.request.contextPath}/shop" style="text-decoration: none; color: #333;">Sản phẩm</a></li>
                 <li><a href="#" style="text-decoration: none; color: #333;">Liên hệ</a></li>
             </ul>
         </nav>

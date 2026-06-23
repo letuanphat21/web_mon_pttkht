@@ -39,9 +39,20 @@
         <td><fmt:formatDate value="${ord.createdAt}" pattern="dd/MM/yyyy HH:mm"/></td>
         <td class="action-cell">
           <button type="button" class="btn btn-sm btn-info text-white" onclick="loadDetail('${ord.orderId}')">Chi tiết</button>
+
           <c:if test="${ord.status == 'Chờ xác nhận'}">
-            <button type="button" class="btn btn-sm btn-success btn-action" onclick="openModal('update', '${ord.orderId}')">Xác nhận</button>
-            <button type="button" class="btn btn-sm btn-danger btn-action" onclick="openModal('cancel', '${ord.orderId}')">Hủy</button>
+            <button type="button" class="btn btn-sm btn-success btn-action" onclick="openModal('update', '${ord.orderId}', 'Đã xác nhận')">Duyệt đơn</button>
+            <button type="button" class="btn btn-sm btn-danger btn-action" onclick="openModal('cancel', '${ord.orderId}', 'Đã hủy')">Hủy</button>
+          </c:if>
+
+          <c:if test="${ord.status == 'Đã xác nhận'}">
+            <button type="button" class="btn btn-sm btn-primary btn-action" onclick="openModal('update', '${ord.orderId}', 'Đang giao')">Giao hàng</button>
+            <button type="button" class="btn btn-sm btn-danger btn-action" onclick="openModal('cancel', '${ord.orderId}', 'Đã hủy')">Hủy</button>
+          </c:if>
+
+          <c:if test="${ord.status == 'Đang giao'}">
+            <button type="button" class="btn btn-sm btn-success btn-action" onclick="openModal('update', '${ord.orderId}', 'Đã giao')">Hoàn thành</button>
+            <button type="button" class="btn btn-sm btn-warning btn-action text-dark" onclick="openModal('cancel', '${ord.orderId}', 'Đã hủy')">Hủy đơn ( hoàn trả )</button>
           </c:if>
         </td>
       </tr>
@@ -53,7 +64,10 @@
 <div class="modal fade" id="actionModal" tabindex="-1">
   <div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 id="modalTitle"></h5></div>
     <div class="modal-body">
-      <div id="updateBody" style="display:none;"><select id="newStatus" class="form-select"><option value="Đã xác nhận">Đã xác nhận</option></select></div>
+      <div id="updateBody" style="display:none;">
+        <p>Bạn có chắc chắn muốn chuyển trạng thái đơn hàng thành: <strong id="targetStatusText" class="text-primary"></strong>?</p>
+        <input type="hidden" id="hiddenNewStatus" value="">
+      </div>
       <div id="cancelBody" style="display:none;"><textarea id="reason" class="form-control" placeholder="Nhập lý do hủy..."></textarea></div>
     </div>
     <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button><button type="button" class="btn btn-primary" onclick="submitAjax()">Xác nhận</button></div>
@@ -62,7 +76,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  let currentAction = '', currentOrderId = '';
+  let currentAction = '', currentOrderId = '', nextStatusTarget = '';
   const modal = new bootstrap.Modal(document.getElementById('actionModal'));
 
   function loadDetail(id) {
@@ -71,40 +85,52 @@
             .then(html => { document.getElementById('main-container').innerHTML = html; });
   }
 
-  function openModal(action, id) {
-    currentAction = action; currentOrderId = id;
-    document.getElementById('modalTitle').innerText = action === 'update' ? 'Xác nhận' : 'Hủy';
-    document.getElementById('updateBody').style.display = action === 'update' ? 'block' : 'none';
-    document.getElementById('cancelBody').style.display = action === 'cancel' ? 'block' : 'none';
+  function openModal(action, id, statusValue) {
+    currentAction = action;
+    currentOrderId = id;
+    nextStatusTarget = statusValue;
+
+    document.getElementById('modalTitle').innerText = action === 'update' ? 'Cập nhật trạng thái' : 'Hủy đơn hàng';
+
+    if (action === 'update') {
+      document.getElementById('targetStatusText').innerText = statusValue;
+      document.getElementById('hiddenNewStatus').value = statusValue;
+      document.getElementById('updateBody').style.display = 'block';
+      document.getElementById('cancelBody').style.display = 'none';
+    } else {
+      document.getElementById('updateBody').style.display = 'none';
+      document.getElementById('cancelBody').style.display = 'block';
+    }
+
     modal.show();
   }
 
   function submitAjax() {
     const data = new URLSearchParams();
     data.append('orderId', currentOrderId);
-    let statusText = (currentAction === 'update') ? 'Đã xác nhận' : 'Đã hủy';
-    data.append('action', currentAction === 'update' ? 'update-status' : 'cancel-order');
-    if(currentAction === 'update') data.append('newStatus', document.getElementById('newStatus').value);
-    else data.append('reason', document.getElementById('reason').value);
+
+    if(currentAction === 'update') {
+      data.append('action', 'update-status');
+      data.append('newStatus', document.getElementById('hiddenNewStatus').value);
+    } else {
+      data.append('action', 'cancel-order');
+      data.append('reason', document.getElementById('reason').value);
+    }
 
     fetch('${pageContext.request.contextPath}/admin/orders', {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: data.toString()
     }).then(res => res.text()).then(result => {
       if (result.trim() === 'SUCCESS') {
         modal.hide();
-        const row = document.getElementById('row-' + currentOrderId);
-        row.querySelector('.status-cell').innerHTML = '<span class="badge ' + (statusText === 'Đã hủy' ? 'bg-danger' : 'bg-success') + '">' + statusText + '</span>';
-        row.querySelectorAll('.btn-action').forEach(btn => btn.remove());
-        alert('Thành công!');
-      } else { alert('Lỗi: ' + result); }
+        location.reload(); // Tải lại trang để đồng bộ hóa các nút thao tác tương ứng với Finite State Machine
+      } else { alert('Lỗi hệ thống, không thể chuyển đổi trạng thái: ' + result); }
     });
   }
+
   function loadList() {
-    // Gọi lại URL gốc của trang danh sách đơn hàng
     fetch('${pageContext.request.contextPath}/admin/orders')
             .then(res => res.text())
             .then(html => {
-              // Lấy nội dung từ kết quả trả về, dùng DOMParser để tránh load full trang
               const parser = new DOMParser();
               const doc = parser.parseFromString(html, 'text/html');
               const newContent = doc.getElementById('main-container').innerHTML;
@@ -112,7 +138,7 @@
             })
             .catch(err => {
               console.error(err);
-              location.reload(); // Dự phòng: reload nếu fetch lỗi
+              location.reload();
             });
   }
 </script>

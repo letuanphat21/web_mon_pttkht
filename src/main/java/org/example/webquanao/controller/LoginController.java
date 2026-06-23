@@ -59,7 +59,13 @@ public class LoginController extends HttpServlet {
             session.setAttribute("roles", roles);
 
             try {
+                // Hợp nhất giỏ hàng tạm dưới DB
                 cartService.mergeCartOnLogin(userId, session);
+
+                // SỬA BUG: Lấy tổng số lượng sản phẩm từ DB đưa vào session để cập nhật Badge ngay khi vừa Login
+                int totalCartCount = cartService.getTotalCartCount(userId);
+                session.setAttribute("totalCartCount", totalCartCount);
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -71,7 +77,7 @@ public class LoginController extends HttpServlet {
                 session.setAttribute("roleId", 2);
                 response.sendRedirect(request.getContextPath() + "/admin/dashboard");
             } else {
-                response.sendRedirect(request.getContextPath() + "/shop");
+                response.sendRedirect(request.getContextPath() + "/");
             }
 
         } else {
