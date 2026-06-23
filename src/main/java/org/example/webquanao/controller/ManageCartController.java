@@ -28,6 +28,12 @@ public class ManageCartController extends HttpServlet {
             // Bước 2: Gọi Service đọc dữ liệu phân nhánh Guest/User và đóng gói vào DTO
             CartPageResponse cartPageData = cartService.getCartPageDetails(userId, session);
 
+            // CODE SỬA BUG: Đọc lại tổng số lượng thực tế từ DB để đồng bộ lên Badge Header
+            if (userId != null) {
+                int totalCartCount = cartService.getTotalCartCount(userId);
+                session.setAttribute("totalCartCount", totalCartCount);
+            }
+
             // Đẩy dữ liệu DTO sang View
             request.setAttribute("cartData", cartPageData);
             request.getRequestDispatcher("/WEB-INF/cart.jsp").forward(request, response);

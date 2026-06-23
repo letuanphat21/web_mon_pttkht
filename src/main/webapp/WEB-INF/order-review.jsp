@@ -70,7 +70,7 @@
 
                 <div class="card-footer d-grid">
                     <form action="order-process" method="post">
-                        <input type="hidden" name="action" value="prepareOrder">
+                        <input type="hidden" name="action" value="confirmOrder">
                         <button type="submit" class="btn btn-success btn-lg w-100">Xác nhận đặt hàng</button>
                     </form>
                 </div>

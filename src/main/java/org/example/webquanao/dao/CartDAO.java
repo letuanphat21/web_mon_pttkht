@@ -155,4 +155,8 @@ public class CartDAO {
                         .one()
         );
     }
+
+    public int sumQuantityByUserId(int userId) {
+        return getTotalCartCount(userId);
+    }
 }

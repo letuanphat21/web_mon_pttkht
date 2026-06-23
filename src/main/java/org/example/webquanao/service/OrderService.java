@@ -77,10 +77,10 @@ public class OrderService {
             return null;
         }
 
-        // 5. Khởi tạo đối tượng DTO OrderResponse hoàn chỉnh truyền ra cho Controller (Bước 15)
-        // Vì DAO cũ của bạn thiết lập Id là chuỗi String (UUID), ta bóc tách mã băm thành số int
-        // hoặc chuyển đổi phù hợp để tương thích cấu trúc OrderResponse(int, list, checkoutRequest)
-        int numericOrderId = Math.abs(uniqueOrderIdStr.hashCode());
+        // 5. Lưu orderId String thật vào CheckoutRequest để PaymentController dùng cập nhật DB
+        // KHÔNG dùng hashCode() vì không map được lại với order_id trong bảng orders
+        checkoutRequest.setOrderRef(uniqueOrderIdStr);
+        int numericOrderId = 0; // Không dùng để map DB nữa — dùng orderRef
 
         return new OrderResponse(numericOrderId, dtoDetailsList, checkoutRequest);
     }
@@ -186,19 +186,58 @@ public class OrderService {
         String currentStatus = order.getStatus();
         String nextStatus = request.getNewStatus();
 
-        // 2. Logic kiểm soát trạng thái (Finite State Machine)
-        // Chỉ cho phép chuyển trạng thái nếu đơn hàng đang ở "Chờ xác nhận"
-        if (!"Chờ xác nhận".equals(currentStatus)) {
-            return "INVALID_TRANSITION"; // Trạng thái hiện tại không cho phép chuyển đổi
+        // Nếu trạng thái mới trùng với trạng thái cũ thì không cần xử lý, trả về thành công luôn
+        if (currentStatus.equals(nextStatus)) {
+            return "SUCCESS";
         }
 
-        // 3. Chỉ cho phép chuyển sang "Đã xác nhận" hoặc "Đã hủy"
-        if ("Đã xác nhận".equals(nextStatus) || "Đã hủy".equals(nextStatus)) {
+        // 2. Logic kiểm soát vòng đời trạng thái (Finite State Machine)
+        boolean isValidTransition = false;
+
+        switch (currentStatus) {
+            case "Chờ xác nhận":
+                // Đơn COD hoặc đơn chưa xử lý: Được phép Xác nhận hoặc Hủy
+                if ("Đã xác nhận".equals(nextStatus) || "Đã hủy".equals(nextStatus)) {
+                    isValidTransition = true;
+                }
+                break;
+
+            case "Đã xác nhận":
+                // Đơn MoMo hoặc đơn COD đã duyệt: Chỉ được chuyển sang Đang giao hoặc Hủy
+                if ("Đang giao".equals(nextStatus) || "Đã hủy".equals(nextStatus)) {
+                    isValidTransition = true;
+                }
+                break;
+
+            case "Đang giao":
+                // Đơn đang đi đường: Chỉ được chuyển sang Đã giao (Hoàn thành) hoặc Đã hủy (Nếu ship thất bại)
+                if ("Đã giao".equals(nextStatus) || "Đã hủy".equals(nextStatus)) {
+                    isValidTransition = true;
+                }
+                break;
+
+            case "Đã giao":
+            case "Đã hủy":
+                // Trạng thái cuối (End State) -> Không được phép thay đổi đi đâu nữa
+                isValidTransition = false;
+                break;
+        }
+
+        // 3. Thực thi cập nhật nếu luồng chuyển đổi hợp lệ
+        if (isValidTransition) {
+            // Nếu Admin chọn hủy đơn hàng ở bất kỳ giai đoạn nào, nên chạy qua nghiệp vụ hoàn kho của bạn
+            if ("Đã hủy".equals(nextStatus)) {
+                List<OrderDetail> details = orderDAO.getDetailsByOrderId(request.getOrderId());
+                boolean success = orderDAO.cancelOrderTransaction(request.getOrderId(), "Admin thay đổi trạng thái thành Hủy", details);
+                return success ? "SUCCESS" : "ERROR_SYSTEM";
+            }
+
+            // Các trạng thái thông thường: Cập nhật trực tiếp chuỗi vào DB
             boolean success = orderDAO.updateStatus(request.getOrderId(), nextStatus);
             return success ? "SUCCESS" : "ERROR_SYSTEM";
         }
 
-        return "INVALID_STATUS"; // Trạng thái đích không hợp lệ
+        return "INVALID_TRANSITION"; // Trả về mã lỗi nếu chuyển trạng thái sai quy trình (Vd: Từ Chờ xác nhận nhảy thẳng lên Đã giao)
     }
 
     public OrderHistoryResponse getOrderDetailsForAdmin(String orderId) {
@@ -244,5 +283,36 @@ public class OrderService {
         boolean success = orderDAO.cancelOrderTransaction(orderId, reason, details);
 
         return success ? "SUCCESS" : "ERROR_SYSTEM";
+    }
+    /**
+     *  Ghi trực tiếp đơn hàng vào DB sau khi MoMo trả kết quả THÀNH CÔNG
+     */
+    public boolean savePaidOrderAfterMomo(String orderIdStr, int userId, String fullName, String phone, String address, CartPageResponse cartResponse) {
+        try {
+            Order order = new Order();
+            order.setOrderId(orderIdStr);
+            order.setUserId(userId);
+            order.setFullName(fullName);
+            order.setPhone(phone);
+            order.setAddress(address);
+            order.setTotalPrice(cartResponse.getTotalAmount());
+            order.setStatus("Đã xác nhận"); // Đã trả tiền nên set thẳng thành Đã xác nhận luôn
+
+            List<OrderDetail> dbDetailsList = new ArrayList<>();
+            for (CartItemResponse item : cartResponse.getCartItems()) {
+                OrderDetail detail = new OrderDetail();
+                detail.setOrderId(orderIdStr);
+                detail.setProductId(item.getId());
+                detail.setQuantity(item.getQty());
+                detail.setPrice(item.getPrice());
+                dbDetailsList.add(detail);
+            }
+
+            // Thực thi Transaction ghi xuống bảng orders và order_details
+            return orderDAO.insertOrder(order, dbDetailsList);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }
