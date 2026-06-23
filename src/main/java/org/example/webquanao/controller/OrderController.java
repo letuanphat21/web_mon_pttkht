@@ -58,6 +58,7 @@ public class OrderController extends HttpServlet {
 
         request.setCharacterEncoding("UTF-8");
         HttpSession session = request.getSession();
+
         System.out.println("DEBUG - checkoutCart: " + session.getAttribute("checkoutCart"));
         System.out.println("DEBUG - checkoutShipping: " + session.getAttribute("checkoutShipping"));
         Integer userId = (Integer) session.getAttribute("userId");
@@ -69,7 +70,8 @@ public class OrderController extends HttpServlet {
         }
 
         String action = request.getParameter("action");
-
+        System.out.println("====== KIỂM TRA ĐẦU VÀO DO_POST ======");
+        System.out.println("-> Action nhận được thực tế là: [" + action + "]");
         // LUỒNG 5 -> 8: KIỂM TRA & KHỞI TẠO ĐẶT HÀNG (Nhấn Đặt hàng tại cart.jsp)
         if ("proceedToCheckout".equals(action)) {
             try {
@@ -150,45 +152,42 @@ public class OrderController extends HttpServlet {
         // LUỒNG 15 -> 16: XÁC NHẬN ĐẶT HÀNG & CHUYỂN THANH TOÁN (Xác nhận đặt hàng)
         else if ("confirmOrder".equals(action)) {
             try {
-                // Lấy lại dữ liệu CartResponse và CheckoutRequest từ Session ra xử lý
+                System.out.println("=== DEBUG THANH TOAN ===");
                 CartPageResponse cartResponse = (CartPageResponse) session.getAttribute("checkoutCart");
                 CheckoutRequest checkoutRequest = (CheckoutRequest) session.getAttribute("checkoutShipping");
 
+                System.out.println("CartResponse tu session: " + (cartResponse != null ? "Co data" : "NULL"));
+                System.out.println("CheckoutRequest tu session: " + (checkoutRequest != null ? "Co data" : "NULL"));
+
                 if (cartResponse == null || checkoutRequest == null) {
+                    System.out.println("-> LOI: Session checkout bi thieu, quay ve /cart");
                     response.sendRedirect(request.getContextPath() + "/cart");
                     return;
                 }
 
-                // Gọi OrderService tiến hành tạo đơn hàng trong Database (Orders & OrderDetails)
+                // LƯU Ý: Tạo lập đơn hàng hoàn chỉnh với trạng thái "Chờ xác nhận" vào Database trước
                 OrderResponse orderResponse = orderService.createOrder(userId, cartResponse, checkoutRequest);
 
-                // Khối Ngoại lệ E16c: Lỗi kết nối đến cổng thanh toán
                 if (orderResponse == null) {
-                    request.setAttribute("error_msg", "Hệ thống thanh toán đang bận, vui lòng thử lại sau!");
-                    request.getRequestDispatcher("/WEB-INF/order-review.jsp").forward(request, response);
+                    System.out.println("-> LOI: Khong tao duoc don hang o tang DB");
+                    request.setAttribute("error_msg", "Hệ thống bận, không thể tạo đơn hàng. Vui lòng thử lại!");
+                    request.getRequestDispatcher("/WEB-INF/cart.jsp").forward(request, response);
                     return;
                 }
 
-                // POST-CONDITION: Kết nối thành công -> Xóa các sản phẩm đã mua khỏi giỏ hàng DB
-                cartService.clearPurchasedItems(userId, cartResponse);
+                // Đóng gói thông tin đơn hàng vừa tạo vào Session để chuyển quyền xử lý sang PaymentController
+                session.setAttribute("pendingOrder", orderResponse);
 
-                // Xóa toàn bộ Session checkout tạm thời
-                session.removeAttribute("checkoutCart");
-                session.removeAttribute("checkoutShipping");
-
-                // Bước 16: Lưu OrderResponse và chuyển hướng sang Use Case 1.29 Thanh toán
-                request.setAttribute("orderResponse", orderResponse);
-                request.getRequestDispatcher("/WEB-INF/payment-selection.jsp").forward(request, response);
+                System.out.println("-> Đã tạo đơn hàng thành công. Chuyển hướng sang trang chọn PTTT...");
+                // Điều hướng sang PaymentController (để chạy luồng hiển thị chọn phương thức thanh toán)
+                response.sendRedirect(request.getContextPath() + "/payment");
 
             } catch (Exception e) {
                 e.printStackTrace();
-                request.setAttribute("error_msg", "Hệ thống gặp sự cố trong quá trình xử lý đơn hàng!");
-                request.getRequestDispatcher("/WEB-INF/order-review.jsp").forward(request, response);
+                response.sendRedirect(request.getContextPath() + "/cart");
             }
         }
-        else if ("prepareOrder".equals(action)) {
-            response.sendRedirect(request.getContextPath() + "/payment-selection.jsp");
-        }/*
+       /*
         else if ("processPayment".equals(action)) {
             // 1. Lấy dữ liệu từ session
             CartPageResponse cart = (CartPageResponse) session.getAttribute("checkoutCart");
