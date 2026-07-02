@@ -62,7 +62,10 @@ public class LoginController extends HttpServlet {
             // tạo session
             HttpSession session = request.getSession();
             session.setAttribute("user",user);
-
+            session.setAttribute("userId", userId);
+            session.setAttribute("roles", roles.stream()
+                    .map(Role::getName)
+                    .toList());
 
             try {
                 // Hợp nhất giỏ hàng tạm dưới DB
