@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.webquanao.action.Result;
+import org.example.webquanao.dto.request.PasswordResetRequest;
 import org.example.webquanao.service.PasswordResetService;
 
 import java.io.IOException;
@@ -29,12 +30,12 @@ public class ForgotPasswordController extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         response.setContentType("text/html;charset=UTF-8");
 
-        String email = request.getParameter("email");
-        Result result = passwordResetService.requestReset(
-                email,
-                getClientIp(request),
-                request.getHeader("User-Agent")
-        );
+        PasswordResetRequest resetRequest = new PasswordResetRequest();
+        resetRequest.setEmail(request.getParameter("email"));
+        resetRequest.setRequestIp(getClientIp(request));
+        resetRequest.setUserAgent(request.getHeader("User-Agent"));
+
+        Result result = passwordResetService.requestReset(resetRequest);
 
         if (result.isSuccess()) {
             request.getSession().setAttribute("pendingResetEmail", result.getData().get("email"));
@@ -43,7 +44,7 @@ public class ForgotPasswordController extends HttpServlet {
             request.getRequestDispatcher("/WEB-INF/verifyCode.jsp").forward(request, response);
         } else {
             request.setAttribute("error", result.getMessage());
-            request.setAttribute("email", email);
+            request.setAttribute("email", resetRequest.getEmail());
             request.getRequestDispatcher("/WEB-INF/forgotPassword.jsp").forward(request, response);
         }
     }

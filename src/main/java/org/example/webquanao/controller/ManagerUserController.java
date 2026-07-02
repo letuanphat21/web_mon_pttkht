@@ -7,6 +7,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.example.webquanao.action.Result;
+import org.example.webquanao.dao.RoleDAO;
+import org.example.webquanao.dao.UserDAO;
+import org.example.webquanao.dto.request.UserRequest;
 import org.example.webquanao.entity.User;
 import org.example.webquanao.service.UserService;
 
@@ -17,6 +20,8 @@ import java.util.List;
 @WebServlet(name = "ManagerUserController", value = "/admin/managerUser")
 public class ManagerUserController extends HttpServlet {
     private final UserService userService = new UserService();
+    private final UserDAO userDAO = new UserDAO();
+    private final RoleDAO roleDAO = new RoleDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -25,13 +30,18 @@ public class ManagerUserController extends HttpServlet {
             return;
         }
 
-        // UC-1.11 / Basic Flow 1: Admin vao man hinh quan ly user, he thong hien thi danh sach.
-        Result result = userService.getUserManagementData();
-        if (result.isSuccess()) {
-            request.setAttribute("users", result.getData().get("users"));
-            request.setAttribute("roles", result.getData().get("roles"));
-        } else {
-            request.setAttribute("error", result.getMessage());
+        try {
+            // Lay danh sach user truc tiep tu DAO, tuong tu List<Product> o HomeController.
+            List<User> users = userDAO.findAll();
+            for (User user : users) {
+                user.setRoles(roleDAO.getRolesByUser(user.getId()));
+            }
+
+            request.setAttribute("users", users);
+            request.setAttribute("roles", roleDAO.findAll());
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("error", "Lay danh sach user that bai");
         }
 
         request.getRequestDispatcher("/WEB-INF/admin/managerUser.jsp").forward(request, response);
@@ -51,9 +61,9 @@ public class ManagerUserController extends HttpServlet {
 
         // Controller chi dieu phoi request theo activity. Nghiep vu/kiem tra du lieu nam trong UserService.
         if ("add".equals(action)) {
-            result = userService.addUser(buildUserFromRequest(request, false), getRoleIds(request));
+            result = userService.addUser(buildUserRequest(request, false));
         } else if ("update".equals(action)) {
-            result = userService.updateUser(buildUserFromRequest(request, true), getRoleIds(request));
+            result = userService.updateUser(buildUserRequest(request, true));
         } else if ("toggleLock".equals(action)) {
             result = userService.toggleUserLock(parseInt(request.getParameter("id")), getCurrentAdminId(session));
         } else {
@@ -69,8 +79,8 @@ public class ManagerUserController extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/admin/managerUser");
     }
 
-    private User buildUserFromRequest(HttpServletRequest request, boolean includeId) {
-        User user = new User();
+    private UserRequest buildUserRequest(HttpServletRequest request, boolean includeId) {
+        UserRequest user = new UserRequest();
         if (includeId) {
             user.setId(parseInt(request.getParameter("id")));
         }
@@ -79,6 +89,7 @@ public class ManagerUserController extends HttpServlet {
         user.setPassword(request.getParameter("password"));
         user.setPhone(request.getParameter("phone"));
         user.setAddress(request.getParameter("address"));
+        user.setRoleIds(getRoleIds(request));
         return user;
     }
 
