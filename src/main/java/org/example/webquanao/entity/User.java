@@ -1,9 +1,8 @@
 package org.example.webquanao.entity;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
+
 public class User {
     private int id;
     private String email;
@@ -74,6 +73,21 @@ public class User {
         if (roles == null) return false;
         return roles.stream()
                 .anyMatch(r -> r.getName().equals("ADMIN"));
+    }
+
+    public boolean usesGoogleLogin() {
+        return googleId != null && !googleId.isBlank();
+    }
+
+    public boolean isTemporarilyLockedAt(LocalDateTime dateTime) {
+        return lockUntil != null && lockUntil.isAfter(dateTime);
+    }
+
+    public boolean canResetPasswordAt(LocalDateTime dateTime) {
+        return active
+                && verified
+                && !usesGoogleLogin()
+                && !isTemporarilyLockedAt(dateTime);
     }
 
 

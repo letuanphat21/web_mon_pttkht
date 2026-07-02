@@ -26,43 +26,13 @@ public class PasswordResetTokenDAO {
         );
     }
 
-    public PasswordResetToken findValidByHash(String tokenHash) {
-        return jdbi.withHandle(handle ->
-                handle.createQuery("""
-                        SELECT id, user_id, token_hash, expires_at, used_at, created_at, request_ip, user_agent
-                        FROM password_reset_tokens
-                        WHERE token_hash = :tokenHash
-                          AND used_at IS NULL
-                          AND expires_at > NOW()
-                        LIMIT 1
-                """)
-                        .bind("tokenHash", tokenHash)
-                        .map((rs, ctx) -> {
-                            PasswordResetToken token = new PasswordResetToken();
-                            token.setId(rs.getInt("id"));
-                            token.setUserId(rs.getInt("user_id"));
-                            token.setTokenHash(rs.getString("token_hash"));
-                            token.setExpiresAt(rs.getTimestamp("expires_at"));
-                            token.setUsedAt(rs.getTimestamp("used_at"));
-                            token.setCreatedAt(rs.getTimestamp("created_at"));
-                            token.setRequestIp(rs.getString("request_ip"));
-                            token.setUserAgent(rs.getString("user_agent"));
-                            return token;
-                        })
-                        .findOne()
-                        .orElse(null)
-        );
-    }
-
-    public PasswordResetToken findValidByUserIdAndHash(int userId, String tokenHash) {
+    public PasswordResetToken findLatestByUserIdAndHash(int userId, String tokenHash) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
                         SELECT id, user_id, token_hash, expires_at, used_at, created_at, request_ip, user_agent
                         FROM password_reset_tokens
                         WHERE user_id = :userId
                           AND token_hash = :tokenHash
-                          AND used_at IS NULL
-                          AND expires_at > NOW()
                         ORDER BY created_at DESC
                         LIMIT 1
                 """)
@@ -85,15 +55,16 @@ public class PasswordResetTokenDAO {
         );
     }
 
-    public void markUsed(int id) {
-        jdbi.useHandle(handle ->
+    public boolean markUsedIfUnused(int id) {
+        return jdbi.withHandle(handle ->
                 handle.createUpdate("""
                         UPDATE password_reset_tokens
                         SET used_at = NOW()
                         WHERE id = :id
+                          AND used_at IS NULL
                 """)
                         .bind("id", id)
-                        .execute()
+                        .execute() == 1
         );
     }
 

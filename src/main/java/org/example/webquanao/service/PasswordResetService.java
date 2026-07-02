@@ -39,7 +39,7 @@ public class PasswordResetService {
             return Result.fail("Email không tồn tại trong hệ thống. Vui lòng kiểm tra lại");
         }
 
-        if (user.getGoogleId() != null && !user.getGoogleId().isBlank()) {
+        if (user.usesGoogleLogin()) {
             return Result.fail("Tài khoản này đăng nhập bằng Google. Vui lòng sử dụng tính năng đăng nhập Google");
         }
 
@@ -47,7 +47,11 @@ public class PasswordResetService {
             return Result.fail("Tài khoản của bạn đang bị khóa, không thể đặt lại mật khẩu lúc này");
         }
 
-        if (user.getLockUntil() != null && user.getLockUntil().isAfter(LocalDateTime.now())) {
+        if (!user.isVerified()) {
+            return Result.fail("Tài khoản chưa được kích hoạt");
+        }
+
+        if (user.isTemporarilyLockedAt(LocalDateTime.now())) {
             return Result.fail("Tài khoản của bạn đang bị khóa đến " + user.getLockUntil());
         }
 
@@ -91,13 +95,22 @@ public class PasswordResetService {
         }
 
         User user = userDAO.findByEmail(email);
-        if (user == null || !user.isActive()) {
+        if (user == null || !user.canResetPasswordAt(LocalDateTime.now())) {
             return Result.fail("Tài khoản không hợp lệ hoặc đang bị khóa");
         }
 
-        PasswordResetToken token = tokenDAO.findValidByUserIdAndHash(user.getId(), hashToken(otp));
-        if (token == null) {
+        PasswordResetToken token = tokenDAO.findLatestByUserIdAndHash(user.getId(), hashToken(otp));
+        if (token == null || !token.isValidAt(new Timestamp(System.currentTimeMillis()))) {
             return Result.fail("Mã xác nhận không hợp lệ hoặc đã hết hạn");
+        }
+
+        try {
+            if (!tokenDAO.markUsedIfUnused(token.getId())) {
+                return Result.fail("Mã xác nhận đã được sử dụng");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.fail("Không thể xác nhận mã lúc này. Vui lòng thử lại");
         }
 
         return Result.ok("Mã xác nhận hợp lệ", Map.of("email", user.getEmail()));
@@ -125,7 +138,7 @@ public class PasswordResetService {
         }
 
         User user = userDAO.findByEmail(email);
-        if (user == null || !user.isActive()) {
+        if (user == null || !user.canResetPasswordAt(LocalDateTime.now())) {
             return Result.fail("Tài khoản không hợp lệ hoặc đang bị khóa");
         }
 

@@ -35,4 +35,16 @@ public class PasswordResetToken {
 
     public String getUserAgent() { return userAgent; }
     public void setUserAgent(String userAgent) { this.userAgent = userAgent; }
+
+    public boolean isUsed() {
+        return usedAt != null;
+    }
+
+    public boolean isExpiredAt(Timestamp dateTime) {
+        return expiresAt == null || !expiresAt.after(dateTime);
+    }
+
+    public boolean isValidAt(Timestamp dateTime) {
+        return !isUsed() && !isExpiredAt(dateTime);
+    }
 }

@@ -4,6 +4,7 @@ import org.example.webquanao.action.Result;
 import org.example.webquanao.dao.RoleDAO;
 import org.example.webquanao.dao.UserDAO;
 import org.example.webquanao.dao.UserRoleDAO;
+import org.example.webquanao.dto.request.UserRequest;
 import org.example.webquanao.dto.response.UserProfileResponse;
 import org.example.webquanao.entity.Role;
 import org.example.webquanao.entity.User;
@@ -39,8 +40,11 @@ public class UserService {
         }
     }
 
-    public Result addUser(User user, List<Integer> roleIds) {
+    public Result addUser(UserRequest request) {
         try {
+            User user = toUser(request);
+            List<Integer> roleIds = request == null ? null : request.getRoleIds();
+
             // UC-1.11 / 2a1.5: He thong kiem tra du lieu truoc khi them user.
             String validationMessage = validateUser(user, roleIds, true);
             if (validationMessage != null) {
@@ -68,8 +72,11 @@ public class UserService {
         }
     }
 
-    public Result updateUser(User user, List<Integer> roleIds) {
+    public Result updateUser(UserRequest request) {
         try {
+            User user = toUser(request);
+            List<Integer> roleIds = request == null ? null : request.getRoleIds();
+
             // UC-1.11 / 2a2.6: He thong kiem tra du lieu truoc khi sua user.
             String validationMessage = validateUser(user, roleIds, false);
             if (validationMessage != null) {
@@ -129,6 +136,10 @@ public class UserService {
     }
 
     private String validateUser(User user, List<Integer> roleIds, boolean requirePassword) {
+        if (user == null) {
+            return "Du lieu user khong hop le";
+        }
+
         trimUser(user);
 
         if (isBlank(user.getFullName()) || isBlank(user.getEmail())) {
@@ -157,6 +168,21 @@ public class UserService {
         }
 
         return null;
+    }
+
+    private User toUser(UserRequest request) {
+        if (request == null) {
+            return null;
+        }
+
+        User user = new User();
+        user.setId(request.getId());
+        user.setFullName(request.getFullName());
+        user.setEmail(request.getEmail());
+        user.setPassword(request.getPassword());
+        user.setPhone(request.getPhone());
+        user.setAddress(request.getAddress());
+        return user;
     }
 
     private void trimUser(User user) {
