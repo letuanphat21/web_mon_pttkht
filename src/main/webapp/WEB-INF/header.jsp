@@ -55,6 +55,19 @@
                     </span>
                 </a>
             </div>
+
+            <c:if test="${empty sessionScope.username}">
+                <div style="display: flex; gap: 10px;">
+                    <a href="${pageContext.request.contextPath}/login"
+                       style="text-decoration: none; color: #333; border: 1px solid #333; padding: 6px 14px; border-radius: 4px; font-weight: 500;">
+                        Login
+                    </a>
+                    <a href="${pageContext.request.contextPath}/register"
+                       style="text-decoration: none; color: white; background: #007bff; border: 1px solid #007bff; padding: 6px 14px; border-radius: 4px; font-weight: 500;">
+                        Register
+                    </a>
+                </div>
+            </c:if>
         </div>
     </div>
 </header>
