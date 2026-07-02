@@ -1,17 +1,19 @@
 package org.example.webquanao.dto.response;
 
+import org.example.webquanao.entity.Role;
+
 import java.util.List;
 
 public class LoginResponse {
     private int id;
     private String email;
     private String username;
-    private List<String> roles;
+    private List<Role> roles;
 
     public LoginResponse() {
     }
 
-    public LoginResponse(int id, String email, String username, List<String> roles) {
+    public LoginResponse(int id, String email, String username, List<Role> roles) {
         this.id = id;
         this.email = email;
         this.username = username;
@@ -42,11 +44,11 @@ public class LoginResponse {
         this.username = username;
     }
 
-    public List<String> getRoles() {
+    public List<Role> getRoles() {
         return roles;
     }
 
-    public void setRoles(List<String> roles) {
+    public void setRoles(List<Role> roles) {
         this.roles = roles;
     }
 }

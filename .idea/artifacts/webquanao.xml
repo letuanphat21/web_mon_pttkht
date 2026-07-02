@@ -1,0 +1,6 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="webquanao">
+    <output-path>$PROJECT_DIR$/target/webquanao-1.0-SNAPSHOT.war</output-path>
+    <root id="root" />
+  </artifact>
+</component>

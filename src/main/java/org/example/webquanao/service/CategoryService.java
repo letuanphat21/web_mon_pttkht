@@ -56,17 +56,19 @@ public class CategoryService {
 
     public Result updateCategory(CategoryRequest dto) {
         try {
-            Category existing = categoryDAO.findById(dto.getId());
-
-            if (existing == null) {
-                return Result.fail("Khong tim thay danh muc");
-            }
 
             Category ct = categoryDAO.findByName(dto.getName());
 
             if (ct != null && ct.getId() != dto.getId()) {
                 return Result.fail("Tên danh mục đã tồn tại");
             }
+            Category existing = categoryDAO.findById(dto.getId());
+
+            if (existing == null) {
+                return Result.fail("Khong tim thay danh muc");
+            }
+
+
 
             existing.setName(dto.getName());
             existing.setActive(dto.isActive());

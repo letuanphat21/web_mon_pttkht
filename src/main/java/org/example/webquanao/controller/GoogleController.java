@@ -8,6 +8,8 @@ import jakarta.servlet.annotation.*;
 import org.example.webquanao.action.Result;
 import org.example.webquanao.dto.request.GoogleLoginRequest;
 import org.example.webquanao.dto.response.LoginResponse;
+import org.example.webquanao.entity.Role;
+import org.example.webquanao.entity.User;
 import org.example.webquanao.helper.HttpClientHelper;
 import org.example.webquanao.service.AuthService;
 import org.example.webquanao.utils.GoogleProperties;
@@ -57,21 +59,22 @@ public class GoogleController extends HttpServlet {
 
             if (result.isSuccess()) {
                 LoginResponse loginResponse = (LoginResponse) result.getData().get("user");
+                int userId = loginResponse.getId();
                 String username1 = loginResponse.getUsername();
                 String email1 = loginResponse.getEmail();
-                List<String> roles = loginResponse.getRoles();
+                List<Role> roles = loginResponse.getRoles();
+
+                User user  = new User();
+                user.setId(userId);
+                user.setEmail(email1);
+                user.setFullName(username1);
+                user.setRoles(roles);
 
                 HttpSession session = request.getSession();
-                session.setAttribute("username", username1);
-                session.setAttribute("email", email1);
-                // kiểm tra role
-//                boolean isAdmin = roles.stream().anyMatch(r -> r.equals("ADMIN"));
+                session.setAttribute("user",user);
 
-//                if (isAdmin) {
-//                    request.getRequestDispatcher("/WEB-INF/managerCategory.jsp").forward(request, response);
-//                } else {
-                    request.getRequestDispatcher("/WEB-INF/home.jsp").forward(request, response);
-//                }
+
+                response.sendRedirect(request.getContextPath() + "/");
             }else {
                 request.setAttribute("error", "Hazz bạn không đăng nhập thành công rồi huhu");
                 request.getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);

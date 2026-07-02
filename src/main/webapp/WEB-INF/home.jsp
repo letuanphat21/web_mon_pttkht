@@ -13,8 +13,8 @@
 <div class="container" style="padding: 20px; max-width: 1200px; margin: 0 auto;">
 
     <section class="user-info">
-        <h2>Xin chào, <c:out value="${sessionScope.username}" default="Khách"/></h2>
-        <p>Email: <c:out value="${sessionScope.email}" default="Chưa cập nhật"/></p>
+        <h2>Xin chào, <c:out value="${sessionScope.user.getFullName()}" default="Khách"/></h2>
+        <p>Email: <c:out value="${sessionScope.user.getEmail()}" default="Chưa cập nhật"/></p>
         <div style="margin-top: 10px;">
             <a href="${pageContext.request.contextPath}/logout"
                style="color: #dc3545; font-weight: bold; text-decoration: none;
