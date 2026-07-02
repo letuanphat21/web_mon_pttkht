@@ -1,6 +1,7 @@
 package org.example.webquanao.dao;
 
 import org.example.webquanao.db.DBConnect;
+import org.example.webquanao.entity.Role;
 import org.jdbi.v3.core.Jdbi;
 
 import java.util.List;
@@ -38,16 +39,16 @@ public class UserRoleDAO {
     }
 
     // Lay tat ca ten role theo userId de luu vao session sau khi dang nhap.
-    public List<String> getRolesByUserId(int userId) {
+    public List<Role> getRolesByUserId(int userId) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
-                        SELECT r.name
-                        FROM user_roles ur
-                        JOIN roles r ON ur.role_id = r.id
-                        WHERE ur.user_id = :uid
-                """)
+                    SELECT r.id, r.name
+                    FROM user_roles ur
+                    JOIN roles r ON ur.role_id = r.id
+                    WHERE ur.user_id = :uid
+                    """)
                         .bind("uid", userId)
-                        .mapTo(String.class)
+                        .mapToBean(Role.class)
                         .list()
         );
     }

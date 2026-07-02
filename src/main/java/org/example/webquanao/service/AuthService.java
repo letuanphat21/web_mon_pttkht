@@ -7,6 +7,7 @@ import org.example.webquanao.dto.request.RegisterRequest;
 import org.example.webquanao.dto.request.LoginRequest;
 import org.example.webquanao.dto.request.GoogleLoginRequest;
 import org.example.webquanao.dto.response.LoginResponse;
+import org.example.webquanao.entity.Role;
 import org.example.webquanao.entity.User;
 import org.example.webquanao.utils.PasswordUtil;
 
@@ -22,26 +23,22 @@ public class AuthService {
         // 2. check email
         User usermail = userDAO.findByEmail(dto.getEmail());
         if (usermail!= null) {
-//            if(usermail.getGoogleId() != null) {
-//                String hashed = PasswordUtil.hashPassword(user.getPassword());
-//                user.setPassword(hashed);
-//                userDAO.updatePasswordAndUsername(user);
-//                return Result.ok("Đăng ký thành công", null);
-//            }else{
                 return Result.fail("Email đã tồn tại");
-//            }
         }
         
         User user = new User();
-        user.setEmail(dto.getEmail());
-        user.setFullName(dto.getFullName());
+
 
         // 3. hash password
         String hashed = PasswordUtil.hashPassword(dto.getPassword());
-        user.setPassword(hashed);
         // 4. tạo code kích hoạt
         String code = UUID.randomUUID().toString();
+
+
+        user.setPassword(hashed);
         user.setCodeActive(code);
+        user.setEmail(dto.getEmail());
+        user.setFullName(dto.getFullName());
 //        user.setCodeActiveCreatedAt(LocalDateTime.now());
 
         int userId;
@@ -134,7 +131,7 @@ public class AuthService {
             return Result.fail("Tài khoản chưa kích hoạt");
         }
 
-        List<String> roles = userRoleDAO.getRolesByUserId(user.getId());
+        List<Role> roles = userRoleDAO.getRolesByUserId(user.getId());
         LoginResponse responseData = new LoginResponse(user.getId(), user.getEmail(), user.getFullName(), roles);
 
         Map<String, Object> data = new HashMap<>();
@@ -185,7 +182,7 @@ public class AuthService {
             userRoleDAO.addRoleToUser(userId, 1);
             newUser.setId(userId);
 
-            List<String> roles = userRoleDAO.getRolesByUserId(newUser.getId());
+            List<Role> roles = userRoleDAO.getRolesByUserId(newUser.getId());
             LoginResponse responseData = new LoginResponse(newUser.getId(), newUser.getEmail(), newUser.getFullName(), roles);
 
             Map<String, Object> data = new HashMap<>();
@@ -205,17 +202,12 @@ public class AuthService {
             return Result.fail("Google account không hợp lệ");
         }
 
-        // 5. check khóa tài khoản do chơi ngu
-//        if (user.getLockUntil() != null && user.getLockUntil().isAfter(LocalDateTime.now())) {
-//            return Result.fail("Tài khoản bị khóa đến " + user.getLockUntil());
-//        }
-
         // 6 check tài khoản do sai qui định chính sách gì đó mà tui cũng chả biết
         if (user.isActive() == false) {
             return Result.fail("Tài khoản bị khóa do quy định chính sách ngu ngốc gì đó");
         }
 
-        List<String> roles = userRoleDAO.getRolesByUserId(user.getId());
+        List<Role> roles = userRoleDAO.getRolesByUserId(user.getId());
         LoginResponse responseData = new LoginResponse(user.getId(), user.getEmail(), user.getFullName(), roles);
 
         Map<String, Object> data = new HashMap<>();

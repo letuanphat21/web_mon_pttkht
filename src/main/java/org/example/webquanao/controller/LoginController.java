@@ -6,6 +6,8 @@ import jakarta.servlet.annotation.*;
 import org.example.webquanao.action.Result;
 import org.example.webquanao.dto.request.LoginRequest;
 import org.example.webquanao.dto.response.LoginResponse;
+import org.example.webquanao.entity.Role;
+import org.example.webquanao.entity.User;
 import org.example.webquanao.service.AuthService;
 import org.example.webquanao.service.CartService;
 
@@ -49,14 +51,18 @@ public class LoginController extends HttpServlet {
             int userId = loginResponse.getId();
             String username1 = loginResponse.getUsername();
             String email = loginResponse.getEmail();
-            List<String> roles = loginResponse.getRoles();
+            List<Role> roles = loginResponse.getRoles();
+
+            User user = new User();
+            user.setId(userId);
+            user.setEmail(email);
+            user.setFullName(username1);
+            user.setRoles(roles);
 
             // tạo session
             HttpSession session = request.getSession();
-            session.setAttribute("userId", userId);
-            session.setAttribute("username", username1);
-            session.setAttribute("email", email);
-            session.setAttribute("roles", roles);
+            session.setAttribute("user",user);
+
 
             try {
                 // Hợp nhất giỏ hàng tạm dưới DB
@@ -71,7 +77,7 @@ public class LoginController extends HttpServlet {
             }
 
             // kiểm tra role
-            boolean isAdmin = roles.stream().anyMatch(r -> r.equals("ADMIN"));
+            boolean isAdmin = roles.stream().anyMatch(r -> r.getName().equals("ADMIN"));
 
             if (isAdmin) {
                 session.setAttribute("roleId", 2);
