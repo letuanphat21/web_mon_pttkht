@@ -4,21 +4,16 @@ import org.jdbi.v3.core.mapper.reflect.ColumnName;
 
 public class OrderDetail {
     private int id;
-
-    @ColumnName("order_id")
-    private String orderId;
-
-    @ColumnName("product_id")
-    private int productId;
-
+    private Order order;
+    private Product product;
     private int quantity;
     private double price;
 
     public OrderDetail() {}
 
-    public OrderDetail(String orderId, int productId, int quantity, double price) {
-        this.orderId = orderId;
-        this.productId = productId;
+    public OrderDetail(Order order, Product product, int quantity, double price) {
+        this.order = order;
+        this.product = product;
         this.quantity = quantity;
         this.price = price;
     }
@@ -26,11 +21,11 @@ public class OrderDetail {
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
-    public String getOrderId() { return orderId; }
-    public void setOrderId(String orderId) { this.orderId = orderId; }
+    public Order getOrder() { return order; }
+    public void setOrder(Order order) { this.order = order; }
 
-    public int getProductId() { return productId; }
-    public void setProductId(int productId) { this.productId = productId; }
+    public Product getProduct() { return product; }
+    public void setProduct(Product product) { this.product = product; }
 
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
@@ -38,7 +33,11 @@ public class OrderDetail {
     public double getPrice() { return price; }
     public void setPrice(double price) { this.price = price; }
 
-    public double getSubTotal() {
-        return this.quantity * this.price;
+    public String getOrderId() {
+        return (order != null) ? order.getOrderId() : null;
+    }
+
+    public int getProductId() {
+        return (product != null) ? product.getProductId() : 0;
     }
 }

@@ -7,6 +7,8 @@ import org.example.webquanao.dto.response.*;
 import org.example.webquanao.dto.response.CartPageResponse.CartItemResponse;
 import org.example.webquanao.entity.Order;
 import org.example.webquanao.entity.OrderDetail;
+import org.example.webquanao.entity.Product;
+import org.example.webquanao.entity.User;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,7 +18,7 @@ import java.util.UUID;
 
 public class OrderService {
     private final OrderDAO orderDAO = new OrderDAO();
-
+    private final ProductService productService = new ProductService();
     /**
      * LUỒNG 9 -> 13: Xác thực thông tin giao hàng dựa trên DTO đầu vào (BR1.28-1)
      */
@@ -41,11 +43,12 @@ public class OrderService {
     /**
      * LUỒNG 15: Tạo lập đơn hàng hoàn chỉnh vào hệ thống Cơ sở dữ liệu
      */
-    public OrderResponse createOrder(int userId, CartPageResponse cartResponse, CheckoutRequest checkoutRequest) throws Exception {
+    public OrderResponse createOrder(User user, CartPageResponse cartResponse, CheckoutRequest checkoutRequest) throws Exception {
         String uniqueOrderIdStr = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
         Order order = new Order();
         order.setOrderId(uniqueOrderIdStr);
-        order.setUserId(userId);
+        order.setUser(user);
         order.setFullName(checkoutRequest.getFullName());
         order.setPhone(checkoutRequest.getPhone());
         order.setAddress(checkoutRequest.getAddress());
@@ -56,33 +59,17 @@ public class OrderService {
         List<OrderDetailResponse> dtoDetailsList = new ArrayList<>();
 
         for (CartItemResponse item : cartResponse.getCartItems()) {
-            // Đối tượng thực thể ghi xuống DB
-            OrderDetail detail = new OrderDetail();
-            detail.setOrderId(uniqueOrderIdStr);
-            detail.setProductId(item.getId());
-            detail.setQuantity(item.getQty());
-            detail.setPrice(item.getPrice());
+            Product product = productService.findById(item.getId());
+            OrderDetail detail = new OrderDetail(order, product, item.getQty(), item.getPrice());
             dbDetailsList.add(detail);
-
-            // Đối tượng DTO đóng gói trả về phía Controller hiển thị
-            OrderDetailResponse dtoDetail = new OrderDetailResponse(item);
-            dtoDetailsList.add(dtoDetail);
+            dtoDetailsList.add(new OrderDetailResponse(item));
         }
 
-        // 4. Gọi tầng DAO thực thi lưu trữ xuống Database bằng Transaction liên hoàn
         boolean isSuccess = orderDAO.insertOrder(order, dbDetailsList);
+        if (!isSuccess) return null;
 
-        if (!isSuccess) {
-            // Trả về null ứng với Ngoại lệ E16c (Hệ thống bận / Lỗi kết nối DB)
-            return null;
-        }
-
-        // 5. Lưu orderId String thật vào CheckoutRequest để PaymentController dùng cập nhật DB
-        // KHÔNG dùng hashCode() vì không map được lại với order_id trong bảng orders
         checkoutRequest.setOrderRef(uniqueOrderIdStr);
-        int numericOrderId = 0; // Không dùng để map DB nữa — dùng orderRef
-
-        return new OrderResponse(numericOrderId, dtoDetailsList, checkoutRequest);
+        return new OrderResponse(0, dtoDetailsList, checkoutRequest);
     }
 
     public Order getOrderById(String orderId) {
@@ -97,10 +84,9 @@ public class OrderService {
         return orderDAO.getOrdersByUserId(userId);
     }
 
-    public String cancelOrder(String orderId, int userId) {
+    public String cancelOrder(String orderId, User user) {
         Order order = orderDAO.findById(orderId);
-
-        if (order == null || order.getUserId() != userId) {
+        if (order == null || order.getUserId() != user.getId()) {
             return "Bạn không có quyền thực hiện thao tác này.";
         }
 
@@ -153,23 +139,16 @@ public class OrderService {
         return response;
     }
 
-    /**
-     * Xử lý hủy đơn hàng
-     * Hỗ trợ logic kiểm tra điều kiện và Transaction hoàn trả kho
-     */
-    public String processCancelOrder(String orderId, int userId, String reason) {
-        // 1. Kiểm tra đơn hàng tồn tại và quyền sở hữu
+    public String processCancelOrder(String orderId, User user, String reason) {
         Order order = orderDAO.findById(orderId);
-        if (order == null || order.getUserId() != userId) {
+        if (order == null || order.getUserId() != user.getId()) {
             return "ERROR_NOT_FOUND";
         }
 
-        // 2. Kiểm tra trạng thái (E6a1)
         if (!"Chờ xác nhận".equals(order.getStatus())) {
             return "ERROR_INVALID_STATUS";
         }
 
-        // 3. Thực hiện hủy đơn và hoàn trả kho (6a3, 6a4)
         List<OrderDetail> details = orderDAO.getDetailsByOrderId(orderId);
         boolean success = orderDAO.cancelOrderTransaction(orderId, reason, details);
 
@@ -282,36 +261,5 @@ public class OrderService {
         boolean success = orderDAO.cancelOrderTransaction(orderId, reason, details);
 
         return success ? "SUCCESS" : "ERROR_SYSTEM";
-    }
-    /**
-     *  Ghi trực tiếp đơn hàng vào DB sau khi MoMo trả kết quả THÀNH CÔNG
-     */
-    public boolean savePaidOrderAfterMomo(String orderIdStr, int userId, String fullName, String phone, String address, CartPageResponse cartResponse) {
-        try {
-            Order order = new Order();
-            order.setOrderId(orderIdStr);
-            order.setUserId(userId);
-            order.setFullName(fullName);
-            order.setPhone(phone);
-            order.setAddress(address);
-            order.setTotalPrice(cartResponse.getTotalAmount());
-            order.setStatus("Đã xác nhận"); // Đã trả tiền nên set thẳng thành Đã xác nhận luôn
-
-            List<OrderDetail> dbDetailsList = new ArrayList<>();
-            for (CartItemResponse item : cartResponse.getCartItems()) {
-                OrderDetail detail = new OrderDetail();
-                detail.setOrderId(orderIdStr);
-                detail.setProductId(item.getId());
-                detail.setQuantity(item.getQty());
-                detail.setPrice(item.getPrice());
-                dbDetailsList.add(detail);
-            }
-
-            // Thực thi Transaction ghi xuống bảng orders và order_details
-            return orderDAO.insertOrder(order, dbDetailsList);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
     }
 }

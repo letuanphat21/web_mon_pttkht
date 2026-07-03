@@ -69,7 +69,7 @@ public class LoginController extends HttpServlet {
 
             try {
                 // Hợp nhất giỏ hàng tạm dưới DB
-                cartService.mergeCartOnLogin(userId, session);
+                cartService.mergeCartOnLogin(user, session);
 
                 // SỬA BUG: Lấy tổng số lượng sản phẩm từ DB đưa vào session để cập nhật Badge ngay khi vừa Login
                 int totalCartCount = cartService.getTotalCartCount(userId);

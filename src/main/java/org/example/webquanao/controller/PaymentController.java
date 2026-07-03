@@ -5,6 +5,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import org.example.webquanao.dto.response.CartPageResponse;
 import org.example.webquanao.dto.response.OrderResponse;
+import org.example.webquanao.entity.User;
 import org.example.webquanao.service.CartService;
 import org.example.webquanao.service.PaymentService;
 
@@ -80,12 +81,12 @@ public class PaymentController extends HttpServlet {
             if (orderExists) {
                 // POST-CONDITION: Dọn dẹp giỏ hàng (DB/Session) và reset số lượng trên Badge (Navbar)
                 try {
-                    Integer userId = (Integer) session.getAttribute("userId");
+                    User user = (User) session.getAttribute("user");
                     CartPageResponse purchasedCart = (CartPageResponse) session.getAttribute("checkoutCart");
 
-                    if (userId != null) {
+                    if (user != null) {
                         if (purchasedCart != null) {
-                            cartService.clearPurchasedItems(userId, purchasedCart);
+                            cartService.clearPurchasedItems(user, purchasedCart);
                         }
                         session.setAttribute("totalCartCount", 0); // Reset badge thành viên về 0
                     } else {
@@ -150,12 +151,12 @@ public class PaymentController extends HttpServlet {
 
             // POST-CONDITION: Dọn dẹp giỏ hàng và đồng bộ Badge số lượng
             try {
-                Integer userId = (Integer) session.getAttribute("userId");
+                User user = (User) session.getAttribute("user");
                 CartPageResponse purchasedCart = (CartPageResponse) session.getAttribute("checkoutCart");
 
-                if (userId != null) {
+                if (user != null) {
                     if (purchasedCart != null) {
-                        cartService.clearPurchasedItems(userId, purchasedCart);
+                        cartService.clearPurchasedItems(user, purchasedCart);
                     }
                     session.setAttribute("totalCartCount", 0);
                 } else {

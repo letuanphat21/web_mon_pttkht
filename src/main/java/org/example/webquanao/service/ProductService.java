@@ -48,11 +48,6 @@ public class ProductService {
         try {
             List<Map<String, Object>> rows = productDAO.findAllWithCategory();
 
-            // Debug: in key thực tế của row đầu tiên ra log
-            if (!rows.isEmpty()) {
-                System.out.println("[ProductService] Map keys: " + rows.get(0).keySet());
-            }
-
             List<ProductResponse> list = new ArrayList<>();
             for (Map<String, Object> row : rows) {
                 ProductResponse r = new ProductResponse();

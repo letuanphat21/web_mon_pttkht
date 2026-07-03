@@ -68,11 +68,21 @@
                     </table>
                 </div>
 
-                <div class="card-footer d-grid">
-                    <form action="order-process" method="post">
-                        <input type="hidden" name="action" value="confirmOrder">
-                        <button type="submit" class="btn btn-success btn-lg w-100">Xác nhận đặt hàng</button>
-                    </form>
+                <div class="card-footer">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <a href="${pageContext.request.contextPath}/order-process?action=backToCart" class="btn btn-outline-secondary btn-lg w-100">
+                                Quay lại giỏ hàng
+                            </a>
+                        </div>
+
+                        <div class="col-md-6">
+                            <form action="order-process" method="post">
+                                <input type="hidden" name="action" value="confirmOrder">
+                                <button type="submit" class="btn btn-success btn-lg w-100">Xác nhận đặt hàng</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.example.webquanao.entity.Order;
 import org.example.webquanao.entity.OrderDetail;
+import org.example.webquanao.entity.User;
 import org.example.webquanao.service.OrderService;
 
 import java.io.IOException;
@@ -22,14 +23,13 @@ public class HistoryController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         HttpSession session = request.getSession();
-        Object userIdObj = session.getAttribute("userId");
+        User user = (User) session.getAttribute("user");
 
-        if (userIdObj == null) {
+        if (user == null) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 
-        int userId = Integer.parseInt(userIdObj.toString());
         String action = request.getParameter("action");
         String orderId = request.getParameter("id");
 
@@ -37,7 +37,7 @@ public class HistoryController extends HttpServlet {
         if ("detail".equals(action) && orderId != null) {
             var orderDetail = orderService.getOrderDetailsForHistory(orderId);
 
-            if (orderDetail != null && orderDetail.getUserId() == userId) {
+            if (orderDetail != null && orderDetail.getUserId() == user.getId()) {
                 request.setAttribute("orderDetail", orderDetail);
                 request.getRequestDispatcher("/WEB-INF/order-detail.jsp").forward(request, response);
             } else {
@@ -46,7 +46,7 @@ public class HistoryController extends HttpServlet {
         }
         // LUỒNG 1-4: Hiển thị danh sách đơn hàng
         else {
-            var orders = orderService.getOrderHistoryList(userId);
+            var orders = orderService.getOrderHistoryList(user.getId());
             request.setAttribute("orders", orders);
             request.getRequestDispatcher("/WEB-INF/order-history.jsp").forward(request, response);
         }
@@ -59,21 +59,19 @@ public class HistoryController extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
 
         HttpSession session = request.getSession();
-        Object userIdObj = session.getAttribute("userId");
+        User user = (User) session.getAttribute("user");
         String action = request.getParameter("action");
         String orderId = request.getParameter("orderId");
         String reason = request.getParameter("reason");
 
-        if (userIdObj == null) {
+        if (user == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
-        int userId = Integer.parseInt(userIdObj.toString());
-
         // LUỒNG 6: Hủy đơn hàng
         if ("confirm-cancel".equals(action) && orderId != null) {
-            String result = orderService.processCancelOrder(orderId, userId, reason);
+            String result = orderService.processCancelOrder(orderId, user, reason);
 
             PrintWriter out = response.getWriter();
             if ("SUCCESS".equals(result)) {

@@ -4,7 +4,7 @@ import java.sql.Timestamp;
 
 public class CartItem {
     private int id;
-    private int cartId;
+    private Cart cart;
     private Product product;
     private int quantity;
     private double totalAmount;
@@ -14,7 +14,8 @@ public class CartItem {
 
     public CartItem() {}
 
-    public CartItem(Product product, int quantity) {
+    public CartItem(Cart cart, Product product, int quantity) {
+        this.cart = cart;
         this.product = product;
         this.quantity = quantity;
         this.calculateTotal();
@@ -28,14 +29,12 @@ public class CartItem {
         }
     }
 
-    public boolean isSelected() { return selected; }
-    public void setSelected(boolean selected) { this.selected = selected; }
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
-    public int getCartId() { return cartId; }
-    public void setCartId(int cartId) { this.cartId = cartId; }
+    public Cart getCart() { return cart; }
+    public void setCart(Cart cart) { this.cart = cart; }
 
     public Product getProduct() { return product; }
     public void setProduct(Product product) {
@@ -50,7 +49,9 @@ public class CartItem {
     }
 
     public double getTotalAmount() { return totalAmount; }
-    public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }
+
+    public boolean isSelected() { return selected; }
+    public void setSelected(boolean selected) { this.selected = selected; }
 
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }

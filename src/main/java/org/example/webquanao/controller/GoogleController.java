@@ -81,7 +81,7 @@ public class GoogleController extends HttpServlet {
                         .toList());
 
                 try {
-                    cartService.mergeCartOnLogin(userId, session);
+                    cartService.mergeCartOnLogin(user, session);
 
                     int totalCartCount = cartService.getTotalCartCount(userId);
                     session.setAttribute("totalCartCount", totalCartCount);
