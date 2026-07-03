@@ -72,9 +72,19 @@ public class GoogleController extends HttpServlet {
 
                 HttpSession session = request.getSession();
                 session.setAttribute("user",user);
+                session.setAttribute("userId", userId);
+                session.setAttribute("roles", roles.stream()
+                        .map(Role::getName)
+                        .toList());
 
+                boolean isAdmin = roles.stream()
+                        .anyMatch(role -> "ADMIN".equals(role.getName()));
+                if (isAdmin) {
+                    session.setAttribute("roleId", 2);
+                }
 
-                response.sendRedirect(request.getContextPath() + "/");
+                response.sendRedirect(request.getContextPath()
+                        + (isAdmin ? "/admin/dashboard" : "/"));
             }else {
                 request.setAttribute("error", "Hazz bạn không đăng nhập thành công rồi huhu");
                 request.getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);

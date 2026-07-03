@@ -22,24 +22,22 @@ public class AuthService {
     public Result registerUser(RegisterRequest dto) {
         // 2. check email
         User usermail = userDAO.findByEmail(dto.getEmail());
-        if (usermail!= null) {
-                return Result.fail("Email đã tồn tại");
+        if (usermail != null) {
+            return Result.fail("Email đã tồn tại");
         }
-        
-        User user = new User();
 
+        User user = new User();
 
         // 3. hash password
         String hashed = PasswordUtil.hashPassword(dto.getPassword());
         // 4. tạo code kích hoạt
         String code = UUID.randomUUID().toString();
 
-
         user.setPassword(hashed);
         user.setCodeActive(code);
         user.setEmail(dto.getEmail());
         user.setFullName(dto.getFullName());
-//        user.setCodeActiveCreatedAt(LocalDateTime.now());
+        // user.setCodeActiveCreatedAt(LocalDateTime.now());
 
         int userId;
         // Kiểm tra coi insert tài khoản vô database ổn khng
@@ -49,9 +47,9 @@ public class AuthService {
             e.printStackTrace();
             return Result.fail("Lỗi hệ thống khi tạo tài khoản");
         }
-        try{
+        try {
             userRoleDAO.addRoleToUser(userId, 1);
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return Result.fail("Lỗi hệ thống khi tạo tài khoản");
         }
@@ -61,7 +59,7 @@ public class AuthService {
             String link = "http://localhost:8080/verify?code=" + code + "&email=" + user.getEmail();
 
             String content = "<h3>Xin chào " + user.getFullName() + "</h3>"
-                    + "<p>Click để kích hoạt:</p>"
+                    + "<p>Click để kích hoạt (mã chỉ có hiệu lực trong 5 phút):</p>"
                     + "<a href='" + link + "'>Kích hoạt</a>";
 
             emailService.sendEmail(user.getEmail(), "Kích hoạt tài khoản", content);
@@ -82,20 +80,51 @@ public class AuthService {
                 return Result.fail("Kích hoạt tài khoản thất bại");
             }
             if (user.getCodeActive().equals(code)) {
-                // Kiểm tra mã kích hoạt đã hết hạn (24 giờ) hay chưa
-                if (user.getCodeActiveCreatedAt() != null && user.getCodeActiveCreatedAt().plusHours(24).isBefore(LocalDateTime.now())) {
-                    return Result.fail("Mã kích hoạt đã hết hạn (chỉ có hiệu lực trong 24 giờ)");
+                // Kiểm tra mã kích hoạt đã hết hạn (5 phút)
+                if (user.getCodeActiveCreatedAt() != null
+                        && user.getCodeActiveCreatedAt().plusMinutes(5).isBefore(LocalDateTime.now())) {
+                    return Result.expired("Mã kích hoạt đã hết hạn (chỉ có hiệu lực trong 5 phút)");
                 }
                 user.setVerified(true);
                 userDAO.updateCodeActive(user);
-            }else {
+            } else {
                 return Result.fail("Kích hoạt tài khoản thất bại");
             }
         } catch (Exception e) {
             e.printStackTrace();
             return Result.fail("Kích hoạt tài khoản thất bại");
         }
-        return Result.ok("Kích hoạt tài khoàn thành công", null);
+        return Result.ok("Kích hoạt tài khoản thành công", null);
+    }
+
+    public Result resendActivationCode(String email) {
+        try {
+            User user = userDAO.findByEmail(email);
+            if (user == null) {
+                return Result.fail("Không tìm thấy tài khoản");
+            }
+            if (user.isVerified()) {
+                return Result.fail("Tài khoản đã được kích hoạt trước đó");
+            }
+
+            // Tạo mã mới + set thời gian mới
+            String newCode = UUID.randomUUID().toString();
+            user.setCodeActive(newCode);
+            user.setCodeActiveCreatedAt(LocalDateTime.now());
+            userDAO.updateCodeActiveAndTime(user);
+
+            // Gửi lại email
+            String link = "http://localhost:8080/verify?code=" + newCode + "&email=" + user.getEmail();
+            String content = "<h3>Xin chào " + user.getFullName() + "</h3>"
+                    + "<p>Đây là mã kích hoạt mới của bạn (có hiệu lực trong 5 phút):</p>"
+                    + "<a href='" + link + "'>Kích hoạt tài khoản</a>";
+            emailService.sendEmail(user.getEmail(), "Gửi lại mã kích hoạt", content);
+
+            return Result.ok("Đã gửi lại mã kích hoạt! Vui lòng kiểm tra email.", null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.fail("Lỗi hệ thống khi gửi lại mã");
+        }
     }
 
     public Result login(LoginRequest dto) {
@@ -148,14 +177,12 @@ public class AuthService {
 
         if (attempts >= 5) {
 
-            LocalDateTime lockTime =
-                    LocalDateTime.now().plusMinutes(30);
+            LocalDateTime lockTime = LocalDateTime.now().plusMinutes(30);
 
             userDAO.updateFailedAttemptsAndLock(
                     user.getId(),
                     0,
-                    lockTime
-            );
+                    lockTime);
 
         } else {
             userDAO.updateFailedAttempts(user.getId(), attempts);
@@ -183,7 +210,8 @@ public class AuthService {
             newUser.setId(userId);
 
             List<Role> roles = userRoleDAO.getRolesByUserId(newUser.getId());
-            LoginResponse responseData = new LoginResponse(newUser.getId(), newUser.getEmail(), newUser.getFullName(), roles);
+            LoginResponse responseData = new LoginResponse(newUser.getId(), newUser.getEmail(), newUser.getFullName(),
+                    roles);
 
             Map<String, Object> data = new HashMap<>();
             data.put("user", responseData);

@@ -2,7 +2,15 @@
 <%@ page isELIgnored="false" %>
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
 <%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
-
+    <style>
+        .sidebar { min-height: 100vh; background: #212529; color: #fff; }
+        .sidebar a { color: #adb5bd; text-decoration: none; padding: 10px 20px; display: block; }
+        .sidebar a:hover { background: #343a40; color: #fff; }
+        .sidebar a.active { background: #0d6efd; color: #fff; }
+        .table td, .table th { vertical-align: middle; }
+        .role-badge { margin-right: 4px; }
+    </style>
+    </style>
 <header style="background: #f8f9fa; padding: 15px; border-bottom: 1px solid #ddd;">
     <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto;">
 

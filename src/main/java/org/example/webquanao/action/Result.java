@@ -4,6 +4,7 @@ import java.util.Map;
 
 public class Result {
     private boolean success;
+    private boolean expired;
     private String message;
     private Map<String, Object> data;
 
@@ -21,8 +22,18 @@ public class Result {
         return new Result(false, message, null);
     }
 
+    public static Result expired(String message) {
+        Result r = new Result(false, message, null);
+        r.expired = true;
+        return r;
+    }
+
     public boolean isSuccess() {
         return success;
+    }
+
+    public boolean isExpired() {
+        return expired;
     }
 
     public String getMessage() {
@@ -32,4 +43,4 @@ public class Result {
     public Map<String, Object> getData() {
         return data;
     }
-}
+}

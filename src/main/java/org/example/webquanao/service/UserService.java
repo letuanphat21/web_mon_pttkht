@@ -6,6 +6,7 @@ import org.example.webquanao.dao.UserDAO;
 import org.example.webquanao.dao.UserRoleDAO;
 import org.example.webquanao.dto.request.UserRequest;
 import org.example.webquanao.dto.response.UserProfileResponse;
+import org.example.webquanao.dto.response.UserResponse;
 import org.example.webquanao.entity.Role;
 import org.example.webquanao.entity.User;
 import org.example.webquanao.utils.PasswordUtil;
@@ -31,7 +32,22 @@ public class UserService {
                 user.setRoles(roleDAO.getRolesByUser(user.getId()));
             }
 
-            data.put("users", users);
+            List<UserResponse> userResponses = users.stream()
+                    .map(user -> {
+                        UserResponse response = new UserResponse();
+                        response.setId(user.getId());
+                        response.setFullName(user.getFullName());
+                        response.setEmail(user.getEmail());
+                        response.setPhone(user.getPhone());
+                        response.setAddress(user.getAddress());
+                        response.setActive(user.isActive());
+                        response.setVerified(user.isVerified());
+                        response.setRoles(user.getRoles());
+                        return response;
+                    })
+                    .toList();
+
+            data.put("users", userResponses);
             data.put("roles", roleDAO.findAll());
             return Result.ok("Lay danh sach user thanh cong", data);
         } catch (Exception e) {
