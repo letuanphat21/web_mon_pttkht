@@ -24,6 +24,9 @@ public class StatisticsDAO {
         String amountExpression = categoryId == null ? "o.total_price" : "od.quantity * od.price";
         String detailJoin = categoryId == null ? "" : " JOIN order_details od ON od.order_id = o.order_id JOIN products p ON p.productId = od.product_id ";
         String categoryFilter = categoryId == null ? "" : " AND p.categoryId = :categoryId ";
+        String soldQuantityExpression = categoryId == null
+                ? "(SELECT COALESCE(SUM(od_all.quantity), 0) FROM order_details od_all WHERE od_all.order_id = o.order_id)"
+                : "od.quantity";
 
         return jdbi.withHandle(handle -> {
             var query = handle.createQuery("""
@@ -39,7 +42,7 @@ public class StatisticsDAO {
                       %s
                     """.formatted(
                     amountExpression,
-                    categoryId == null ? "0" : "od.quantity",
+                    soldQuantityExpression,
                     detailJoin,
                     SUCCESS_CONDITION,
                     categoryFilter

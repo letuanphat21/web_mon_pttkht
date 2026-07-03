@@ -6,8 +6,31 @@
   <meta charset="UTF-8">
   <title>Quản lý đơn hàng - Admin</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .sidebar { min-height: 100vh; background: #212529; color: #fff; }
+    .sidebar a { color: #adb5bd; text-decoration: none; padding: 10px 20px; display: block; }
+    .sidebar a:hover { background: #343a40; color: #fff; }
+    .sidebar a.active { background: #0d6efd; color: #fff; }
+  </style>
 </head>
-<body class="container mt-4">
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 p-0 sidebar">
+            <div class="p-3"><h4>Quản lý</h4></div>
+            <nav>
+                <a href="<%= request.getContextPath() %>/admin/dashboard">Dashboard</a>
+                <a href="<%= request.getContextPath() %>/admin/statistics">Thống kê</a>
+                <a href="<%= request.getContextPath() %>/admin/managerCategory">Quản lý Danh mục</a>
+                <a href="<%= request.getContextPath() %>/admin/managerProduct">Quản lý Sản phẩm</a>
+                <a href="<%= request.getContextPath() %>/admin/orders">Quản lý Đơn hàng</a>
+                <a href="<%= request.getContextPath() %>/admin/invoice?action=list" class="active">Quản lý Hóa đơn</a>
+                <a href="<%= request.getContextPath() %>/admin/managerUser">Quản lý Người dùng</a>
+                <hr>
+                <a href="<%= request.getContextPath() %>/logout" class="text-danger">Đăng xuất</a>
+            </nav>
+        </div>
+        <div class="col-md-10 p-4">
 
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h2>Quản lý đơn hàng</h2>
@@ -99,5 +122,8 @@
     new bootstrap.Modal(document.getElementById('cancelModal')).show();
   }
 </script>
+        </div>
+    </div>
+</div>
 </body>
 </html>

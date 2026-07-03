@@ -59,13 +59,14 @@
             <h4>Quản lý</h4>
           </div>
           <nav>
-            <a href="${pageContext.request.contextPath}/admin/dashboard">Dashboard</a>
-            <a href="${pageContext.request.contextPath}/admin/managerCategory" class="active">Quản lý Danh mục</a>
-            <a href="${pageContext.request.contextPath}/admin/orders">Quản lý đơn hàng</a>
-            <a href="${pageContext.request.contextPath}/admin/managerUser">Quản lý Người dùng</a>
-            <a href="${pageContext.request.contextPath}/admin/managerProduct">Quản lý Sản phẩm</a>
+            <a href="<%= request.getContextPath() %>/admin/dashboard">Dashboard</a>
+            <a href="<%= request.getContextPath() %>/admin/statistics">Thống kê</a>
+            <a href="<%= request.getContextPath() %>/admin/managerCategory" class="active">Quản lý Danh mục</a>
+            <a href="<%= request.getContextPath() %>/admin/managerProduct">Quản lý Sản phẩm</a>
+            <a href="<%= request.getContextPath() %>/admin/orders">Quản lý Đơn hàng</a>
+            <a href="<%= request.getContextPath() %>/admin/managerUser">Quản lý Người dùng</a>
             <hr>
-            <a href="${pageContext.request.contextPath}/logout" class="text-danger">Đăng xuất</a>
+            <a href="<%= request.getContextPath() %>/logout" class="text-danger">Đăng xuất</a>
           </nav>
         </div>
 
