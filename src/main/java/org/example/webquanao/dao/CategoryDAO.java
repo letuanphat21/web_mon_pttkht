@@ -71,7 +71,7 @@ public class CategoryDAO {
                 handle.createUpdate("""
                         UPDATE categories
                         SET name = :name,
-                            active = :active
+                        active = :active
                         WHERE id = :id
                 """)
                         .bindBean(c)

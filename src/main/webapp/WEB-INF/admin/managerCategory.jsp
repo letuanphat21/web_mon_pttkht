@@ -104,8 +104,24 @@
                 <div class="modal-body">
                   <input type="hidden" id="categoryId" />
 
-                  <label>Tên danh mục</label>
-                  <input type="text" id="categoryName" class="form-control" required />
+                  <div class="mb-3">
+                    <label class="form-label">Tên danh mục</label>
+                    <input type="text" id="categoryName" class="form-control" required />
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label class="form-label">Trạng thái</label>
+                    <div>
+                      <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="categoryActive" id="activeRadio" value="true" checked>
+                        <label class="form-check-label" for="activeRadio">Hoạt động</label>
+                      </div>
+                      <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="categoryActive" id="deactiveRadio" value="false">
+                        <label class="form-check-label" for="deactiveRadio">Đã tắt</label>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="modal-footer">
@@ -225,7 +241,7 @@
                 let btnClass = row.active ? "btn-warning" : "btn-info";
 
                 return `
-                                    <button class="btn btn-sm btn-primary" onclick="openEditModal(\${row.id},'\${row.name}')">Sửa</button>
+                                    <button class="btn btn-sm btn-primary" onclick="openEditModal(\${row.id},'\${row.name}', \${row.active})">Sửa</button>
                                     <button class="btn btn-sm \${btnClass}" onclick="openToggleModal(\${row.id}, \${row.active})">\${btnText}</button>
                                 `;
               },
@@ -239,14 +255,20 @@
           "Thêm danh mục";
         document.getElementById("categoryId").value = "";
         document.getElementById("categoryName").value = "";
+        document.getElementById("activeRadio").checked = true;
         categoryModal.show();
       }
 
-      function openEditModal(id, name) {
+      function openEditModal(id, name, isActive) {
         document.getElementById("categoryModalTitle").innerText =
           "Sửa danh mục";
         document.getElementById("categoryId").value = id;
         document.getElementById("categoryName").value = name;
+        if (isActive) {
+          document.getElementById("activeRadio").checked = true;
+        } else {
+          document.getElementById("deactiveRadio").checked = true;
+        }
         categoryModal.show();
       }
 
@@ -273,7 +295,8 @@
         }
 
         const method = id ? "PUT" : "POST";
-        const body = { name: name };
+        const isActive = document.getElementById("activeRadio").checked;
+        const body = { name: name, active: isActive };
         if (id) body.id = parseInt(id);
 
         fetch(API_URL, {

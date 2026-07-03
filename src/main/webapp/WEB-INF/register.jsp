@@ -41,5 +41,9 @@
     <button type="submit">Đăng ký</button>
 
 </form>
+<br>
+<a href="${pageContext.request.contextPath}/login">
+    Login
+</a>
 </body>
 </html>

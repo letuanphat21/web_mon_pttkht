@@ -1,9 +1,13 @@
 package org.example.webquanao.entity;
 
+import java.util.List;
+
 public class Category {
     private int id;
     private String name;
     private boolean active;
+
+    private List<Product> products;
     public Category() {
     }
 
@@ -35,5 +39,13 @@ public class Category {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public List<Product> getProducts() {
+        return products;
+    }
+
+    public void setProducts(List<Product> products) {
+        this.products = products;
     }
 }

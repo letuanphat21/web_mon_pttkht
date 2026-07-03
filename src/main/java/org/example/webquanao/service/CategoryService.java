@@ -43,8 +43,8 @@ public class CategoryService {
 
             Category category = new Category();
             category.setName(dto.getName());
-            category.setActive(true);
-            
+            category.setActive(dto.isActive());
+
             categoryDAO.insert(category);
 
             return Result.ok("Them danh muc thanh cong", null);
@@ -67,8 +67,6 @@ public class CategoryService {
             if (existing == null) {
                 return Result.fail("Khong tim thay danh muc");
             }
-
-
 
             existing.setName(dto.getName());
             existing.setActive(dto.isActive());

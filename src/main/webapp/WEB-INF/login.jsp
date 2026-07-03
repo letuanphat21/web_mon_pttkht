@@ -33,8 +33,11 @@
 
     <button type="submit">Đăng nhập</button>
 
-</form>
 
+</form>
+<a href="${pageContext.request.contextPath}/register">
+    Register
+</a>
 <br>
 <a href="${pageContext.request.contextPath}/forgot-password">Quên mật khẩu?</a>
 
