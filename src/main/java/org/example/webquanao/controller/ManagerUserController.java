@@ -7,10 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.example.webquanao.action.Result;
-import org.example.webquanao.dao.RoleDAO;
-import org.example.webquanao.dao.UserDAO;
 import org.example.webquanao.dto.request.UserRequest;
-import org.example.webquanao.entity.User;
 import org.example.webquanao.service.UserService;
 
 import java.io.IOException;
@@ -20,8 +17,6 @@ import java.util.List;
 @WebServlet(name = "ManagerUserController", value = "/admin/managerUser")
 public class ManagerUserController extends HttpServlet {
     private final UserService userService = new UserService();
-    private final UserDAO userDAO = new UserDAO();
-    private final RoleDAO roleDAO = new RoleDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -30,18 +25,13 @@ public class ManagerUserController extends HttpServlet {
             return;
         }
 
-        try {
-            // Lay danh sach user truc tiep tu DAO, tuong tu List<Product> o HomeController.
-            List<User> users = userDAO.findAll();
-            for (User user : users) {
-                user.setRoles(roleDAO.getRolesByUser(user.getId()));
+        Result result = userService.getUserManagementData();
+        if (result.isSuccess()) {
+            for (var entry : result.getData().entrySet()) {
+                request.setAttribute(entry.getKey(), entry.getValue());
             }
-
-            request.setAttribute("users", users);
-            request.setAttribute("roles", roleDAO.findAll());
-        } catch (Exception e) {
-            e.printStackTrace();
-            request.setAttribute("error", "Lay danh sach user that bai");
+        } else {
+            request.setAttribute("error", result.getMessage());
         }
 
         request.getRequestDispatcher("/WEB-INF/admin/managerUser.jsp").forward(request, response);
