@@ -1,8 +1,10 @@
 package org.example.webquanao.service;
 
 import org.example.webquanao.dao.OrderDAO;
+import org.example.webquanao.dao.PaymentDAO;
 import org.example.webquanao.dto.response.OrderDetailResponse;
 import org.example.webquanao.dto.response.OrderResponse;
+import org.example.webquanao.entity.Payment;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -18,6 +20,7 @@ import java.util.UUID;
 public class PaymentService {
 
     private final OrderDAO orderDAO = new OrderDAO();
+    private final PaymentDAO paymentDAO = new PaymentDAO();
 
     // ===== MOMO CONFIG =====
     private static final String MOMO_PARTNER_CODE = "MOMO";
@@ -29,7 +32,13 @@ public class PaymentService {
      * Xử lý xác nhận đơn COD
      */
     public boolean processCODPayment(String orderId) {
-        return orderDAO.updateStatus(orderId, "Chờ xác nhận");
+        boolean updated = orderDAO.updateStatus(orderId, "Chờ xác nhận");
+        if (updated) {
+            // COD: tiền chỉ thu khi giao hàng -> payment_status vẫn "Chưa thanh toán"
+            Payment payment = new Payment(orderId, "COD", 0);
+            paymentDAO.insertPayment(payment);
+        }
+        return updated;
     }
 
     /**
@@ -37,7 +46,12 @@ public class PaymentService {
      */
     public boolean processMomoSuccess(String orderId) {
         if (orderId == null) return false;
-        return orderDAO.updateOrderStatus(orderId, "Đã xác nhận");
+        boolean updated = orderDAO.updateOrderStatus(orderId, "Đã xác nhận");
+        if (updated) {
+            // MoMo: thanh toán online thành công ngay lúc redirect về
+            paymentDAO.updatePaymentStatus(orderId, "Đã thanh toán", true);
+        }
+        return updated;
     }
 
     /**
@@ -79,6 +93,12 @@ public class PaymentService {
                 + "&requestType=payWithMethod";
 
         String signature = hmacSHA256(rawSignature, MOMO_SECRET_KEY);
+
+        // Lưu bản ghi Payment trạng thái "Chưa thanh toán", kèm momoOrderId/requestId để đối soát ở bước callback
+        Payment payment = new Payment(realOrderId, "MOMO", totalAmount);
+        payment.setMomoOrderId(momoOrderId);
+        payment.setRequestId(requestId);
+        paymentDAO.insertPayment(payment);
 
         String body = "{"
                 + "\"partnerCode\":\""  + MOMO_PARTNER_CODE + "\","
@@ -130,6 +150,10 @@ public class PaymentService {
      */
     public boolean cancelPendingOrder(String orderId) {
         if (orderId == null) return false;
-        return orderDAO.updateOrderStatus(orderId, "Đã hủy");
+        boolean updated = orderDAO.updateOrderStatus(orderId, "Đã hủy");
+        if (updated) {
+            paymentDAO.updatePaymentStatus(orderId, "Đã hủy", false);
+        }
+        return updated;
     }
 }
