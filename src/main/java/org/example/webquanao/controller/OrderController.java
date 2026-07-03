@@ -63,15 +63,13 @@ public class OrderController extends HttpServlet {
         System.out.println("DEBUG - checkoutShipping: " + session.getAttribute("checkoutShipping"));
         Integer userId = (Integer) session.getAttribute("userId");
 
-        // Đảm bảo PRE-CONDITION: User đã đăng nhập thành công
+        // PRE-CONDITION: User đã đăng nhập thành công
         if (userId == null) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 
         String action = request.getParameter("action");
-        System.out.println("====== KIỂM TRA ĐẦU VÀO DO_POST ======");
-        System.out.println("-> Action nhận được thực tế là: [" + action + "]");
         // LUỒNG 5 -> 8: KIỂM TRA & KHỞI TẠO ĐẶT HÀNG (Nhấn Đặt hàng tại cart.jsp)
         if ("proceedToCheckout".equals(action)) {
             try {

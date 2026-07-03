@@ -124,14 +124,19 @@ public class CartDAO {
     }
 
     public boolean insertCartItem(int cartId, int productId, int quantity) {
-        int rows = getJdbi().withHandle(handle ->
-                handle.createUpdate("INSERT INTO cart_items (cart_id, product_id, quantity, is_selected) VALUES (:cartId, :productId, :quantity, 1)")
-                        .bind("cartId", cartId)
-                        .bind("productId", productId)
-                        .bind("quantity", quantity)
-                        .execute()
-        );
-        return rows > 0;
+        try {
+            int rows = getJdbi().withHandle(handle ->
+                    handle.createUpdate("INSERT INTO cart_items (cart_id, product_id, quantity, is_selected) VALUES (:cartId, :productId, :quantity, 1)")
+                            .bind("cartId", cartId)
+                            .bind("productId", productId)
+                            .bind("quantity", quantity)
+                            .execute()
+            );
+            return rows > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public boolean updateCartItemQuantity(int cartId, int productId, int newQuantity) {

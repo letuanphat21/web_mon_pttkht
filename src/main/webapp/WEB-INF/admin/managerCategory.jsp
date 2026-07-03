@@ -61,7 +61,7 @@
           <nav>
             <a href="${pageContext.request.contextPath}/admin/dashboard">Dashboard</a>
             <a href="${pageContext.request.contextPath}/admin/managerCategory" class="active">Quản lý Danh mục</a>
-            <a href="${pageContext.request.contextPath}/admin/invoice?action=list">Quản lý Hóa đơn</a>
+            <a href="${pageContext.request.contextPath}/admin/orders">Quản lý đơn hàng</a>
             <a href="${pageContext.request.contextPath}/admin/managerUser">Quản lý Người dùng</a>
             <a href="${pageContext.request.contextPath}/admin/managerProduct">Quản lý Sản phẩm</a>
             <hr>

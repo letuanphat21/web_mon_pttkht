@@ -166,29 +166,26 @@ public class CartService {
         }
     }
 
-    // BỔ SUNG LUỒNG 6d: GỘP GIỎ HÀNG TỪ SESSION VÀO DATABASE KHI GUEST ĐĂNG NHẬP
+    // LUỒNG 6d: GỘP GIỎ HÀNG TỪ SESSION VÀO DATABASE KHI GUEST ĐĂNG NHẬP
     public void mergeCartOnLogin(int userId, HttpSession session) throws Exception {
         Cart sessionCart = (Cart) session.getAttribute("cart");
+        System.out.println("[DEBUG] mergeCartOnLogin: Bắt đầu gộp cho User " + userId);
 
         if (sessionCart != null && !sessionCart.getItems().isEmpty()) {
             int cartId = cartDAO.getOrCreateCartId(userId);
-
             for (CartItem sessionItem : sessionCart.getItems().values()) {
-                int productId = sessionItem.getProduct().getProductId();
-                int sessionQty = sessionItem.getQuantity();
-
-                // Kiểm tra xem sản phẩm này đã có trong DB của User chưa
-                CartItem dbItem = cartDAO.checkUserCart(userId, productId);
-
+                int pid = sessionItem.getProduct().getProductId();
+                CartItem dbItem = cartDAO.checkUserCart(userId, pid);
                 if (dbItem == null) {
-                    cartDAO.insertCartItem(cartId, productId, sessionQty);
+                    cartDAO.insertCartItem(cartId, pid, sessionItem.getQuantity());
                 } else {
-                    int newQty = dbItem.getQuantity() + sessionQty;
-                    cartDAO.updateCartItemQuantity(cartId, productId, newQty);
+                    cartDAO.updateCartItemQuantity(cartId, pid, dbItem.getQuantity() + sessionItem.getQuantity());
                 }
             }
-            // Giải phóng giỏ hàng tạm trên Session sau khi đã gộp thành công
             session.removeAttribute("cart");
+            System.out.println("[DEBUG] mergeCartOnLogin: Đã gộp và xóa Session Cart");
+        } else {
+            System.out.println("[DEBUG] mergeCartOnLogin: Không có giỏ hàng tạm để gộp");
         }
     }
 
@@ -200,61 +197,40 @@ public class CartService {
 
     public Object addToCart(AddToCartRequest reqAdd, HttpSession session) throws Exception {
         int productId = reqAdd.getProductId();
-        int qty = reqAdd.getQuantity();
-
+        int qtyToAdd = reqAdd.getQuantity();
         Product product = productService.findById(productId);
-
-        if (qty <= 0) {
-            return "INVALID_QUANTITY";
-        }
-
-        if (product == null || qty > product.getQuantity()) {
-            return "STOCK_EXCEEDED";
-        }
+        if (product == null) return "PRODUCT_NOT_FOUND";
 
         Integer userId = (Integer) session.getAttribute("userId");
+        System.out.println("[DEBUG] addToCart: UserID = " + userId + ", ProductID = " + productId);
 
         if (userId == null) {
             Cart cart = (Cart) session.getAttribute("cart");
-            if (cart == null) {
-                cart = new Cart();
-            }
+            if (cart == null) cart = new Cart();
+            int currentQty = cart.getItems().containsKey(productId) ? cart.getItems().get(productId).getQuantity() : 0;
+            if (currentQty + qtyToAdd > product.getQuantity()) return "STOCK_EXCEEDED";
 
-            if (!cart.getItems().containsKey(productId)) {
-                CartItem cartItem = new CartItem(product, qty);
-                cart.addCartItem(cartItem);
-            } else {
-                CartItem cartItem = cart.getItems().get(productId);
-                cartItem.setQuantity(cartItem.getQuantity() + qty);
-                cart.recalculateTotal();
-            }
+            if (currentQty == 0) cart.addCartItem(new CartItem(product, qtyToAdd));
+            else cart.getItems().get(productId).setQuantity(currentQty + qtyToAdd);
+
             session.setAttribute("cart", cart);
-
         } else {
-            CartItem dbItem = cartDAO.checkUserCart(userId, productId);
             int cartId = cartDAO.getOrCreateCartId(userId);
+            CartItem dbItem = cartDAO.checkUserCart(userId, productId);
+            int currentQty = (dbItem != null) ? dbItem.getQuantity() : 0;
 
+            if (currentQty + qtyToAdd > product.getQuantity()) return "STOCK_EXCEEDED";
+
+            boolean success;
             if (dbItem == null) {
-                cartDAO.insertCartItem(cartId, productId, qty);
+                success = cartDAO.insertCartItem(cartId, productId, qtyToAdd);
+                System.out.println("[DEBUG] addToCart: INSERT item mới: " + success);
             } else {
-                int newQuantity = dbItem.getQuantity() + qty;
-                cartDAO.updateCartItemQuantity(cartId, productId, newQuantity);
-
-                Cart mockCart = new Cart();
-                dbItem.setQuantity(newQuantity);
-                mockCart.addCartItem(dbItem);
+                success = cartDAO.updateCartItemQuantity(cartId, productId, currentQty + qtyToAdd);
+                System.out.println("[DEBUG] addToCart: UPDATE cộng dồn item: " + success);
             }
         }
-
-        int totalCount = 0;
-        if (userId != null) {
-            totalCount = cartDAO.getTotalCartCount(userId);
-        } else {
-            Cart cart = (Cart) session.getAttribute("cart");
-            totalCount = (cart != null) ? cart.getItems().values().stream().mapToInt(CartItem::getQuantity).sum() : 0;
-        }
-
-        return new CartResponse("Thêm sản phẩm thành công", totalCount);
+        return new CartResponse("Thêm thành công", getTotalCartCount(userId != null ? userId : 0));
     }
 
     public CartPageResponse getSelectedItemsCart(int userId) throws Exception {
@@ -314,7 +290,7 @@ public class CartService {
     }
 
     public int getTotalCartCount(int userId) {
-        // Xuống CartDAO gọi hàm đếm tổng quantity của các item thuộc về userId này
+        if (userId == 0) return 0;
         return cartDAO.sumQuantityByUserId(userId);
     }
 
