@@ -1,109 +1,172 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<html>
+  <!DOCTYPE html>
+  <html lang="vi">
+
   <head>
-    <title>Category Manager</title>
+    <title>Quản lý danh mục</title>
+    <meta charset="UTF-8">
 
     <!-- DataTable -->
-    <link
-      rel="stylesheet"
-      href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css"
-    />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css" />
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 
     <!-- Bootstrap -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+      .sidebar {
+        min-height: 100vh;
+        background: #212529;
+        color: #fff;
+      }
+
+      .sidebar a {
+        color: #adb5bd;
+        text-decoration: none;
+        padding: 10px 20px;
+        display: block;
+      }
+
+      .sidebar a:hover {
+        background: #343a40;
+        color: #fff;
+      }
+
+      .sidebar a.active {
+        background: #0d6efd;
+        color: #fff;
+      }
+
+      .table td,
+      .table th {
+        vertical-align: middle;
+      }
+
+      .role-badge {
+        margin-right: 4px;
+      }
+    </style>
   </head>
 
-  <body class="p-3">
-    <h2>Quản lý danh mục</h2>
+  <body>
+    <div class="container-fluid">
+      <div class="row">
 
-    <button class="btn btn-primary mb-3" onclick="openAddModal()">
-      + Thêm danh mục
-    </button>
-
-    <table id="categoryTable" class="display" style="width: 100%">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Tên danh mục</th>
-          <th>Trạng thái</th>
-          <th>Hành động</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <!-- MODAL ADD/EDIT -->
-    <div class="modal fade" id="categoryModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="categoryModalTitle">Thêm danh mục</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
+        <!-- SIDEBAR -->
+        <div class="col-md-2 p-0 sidebar">
+          <div class="p-3">
+            <h4>Quản lý</h4>
           </div>
-
-          <div class="modal-body">
-            <input type="hidden" id="categoryId" />
-
-            <label>Tên danh mục</label>
-            <input
-              type="text"
-              id="categoryName"
-              class="form-control"
-              required
-            />
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn btn-secondary" data-bs-dismiss="modal">
-              Huỷ
-            </button>
-            <button class="btn btn-success" onclick="saveCategory()">
-              Lưu
-            </button>
-          </div>
+          <nav>
+            <a href="${pageContext.request.contextPath}/admin/dashboard">Dashboard</a>
+            <a href="${pageContext.request.contextPath}/admin/managerCategory" class="active">Quản lý Danh mục</a>
+            <a href="${pageContext.request.contextPath}/admin/invoice?action=list">Quản lý Hóa đơn</a>
+            <a href="${pageContext.request.contextPath}/admin/managerUser">Quản lý Người dùng</a>
+            <a href="${pageContext.request.contextPath}/admin/managerProduct">Quản lý Sản phẩm</a>
+            <hr>
+            <a href="${pageContext.request.contextPath}/logout" class="text-danger">Đăng xuất</a>
+          </nav>
         </div>
-      </div>
-    </div>
 
-    <!-- MODAL CONFIRM TOGGLE -->
-    <div class="modal fade" id="confirmModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Xác nhận</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
+        <!-- MAIN CONTENT -->
+        <main class="col-md-10 p-4">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h2 class="mb-1">Quản lý danh mục</h2>
+              <div class="text-muted">Thêm, sửa, bật/tắt danh mục sản phẩm.</div>
+            </div>
+            <button class="btn btn-primary" onclick="openAddModal()">+ Thêm danh mục</button>
           </div>
 
-          <div class="modal-body">
-            <p id="confirmMessage">
-              Bạn có chắc chắn muốn thay đổi trạng thái danh mục này?
-            </p>
-            <input type="hidden" id="toggleCategoryId" />
+          <table id="categoryTable" class="display" style="width: 100%">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Tên danh mục</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
+          <!-- MODAL ADD/EDIT -->
+          <div class="modal fade" id="categoryModal" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="categoryModalTitle">Thêm danh mục</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                  <input type="hidden" id="categoryId" />
+
+                  <label>Tên danh mục</label>
+                  <input type="text" id="categoryName" class="form-control" required />
+                </div>
+
+                <div class="modal-footer">
+                  <button class="btn btn-secondary" data-bs-dismiss="modal">
+                    Huỷ
+                  </button>
+                  <button class="btn btn-success" onclick="openSaveConfirm()">
+                    Lưu
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="modal-footer">
-            <button class="btn btn-secondary" data-bs-dismiss="modal">
-              Huỷ
-            </button>
-            <button class="btn btn-danger" onclick="executeToggle()">
-              Đồng ý
-            </button>
+          <!-- MODAL CONFIRM SAVE -->
+          <div class="modal fade" id="saveCategoryConfirmModal" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Xác nhận</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <p id="saveConfirmMessage">Bạn có chắc chắn muốn lưu danh mục này?</p>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+                  <button class="btn btn-success" onclick="saveCategory()">Xác nhận</button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+
+          <!-- MODAL CONFIRM TOGGLE -->
+          <div class="modal fade" id="confirmModal" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Xác nhận</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                  <p id="confirmMessage">
+                    Bạn có chắc chắn muốn thay đổi trạng thái danh mục này?
+                  </p>
+                  <input type="hidden" id="toggleCategoryId" />
+                </div>
+
+                <div class="modal-footer">
+                  <button class="btn btn-secondary" data-bs-dismiss="modal">
+                    Huỷ
+                  </button>
+                  <button class="btn btn-danger" onclick="executeToggle()">
+                    Đồng ý
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </main>
       </div>
     </div>
 
@@ -115,6 +178,9 @@
       );
       const confirmModal = new bootstrap.Modal(
         document.getElementById("confirmModal"),
+      );
+      const saveCategoryConfirmModal = new bootstrap.Modal(
+        document.getElementById("saveCategoryConfirmModal"),
       );
 
       $(document).ready(function () {
@@ -183,6 +249,19 @@
         categoryModal.show();
       }
 
+      function openSaveConfirm() {
+        const id = document.getElementById("categoryId").value;
+        const name = document.getElementById("categoryName").value.trim();
+        if (!name) {
+          alert("Vui lòng nhập tên danh mục");
+          return;
+        }
+        const action = id ? "sửa" : "thêm";
+        document.getElementById("saveConfirmMessage").innerText =
+          `Bạn có chắc chắn muốn \${action} danh mục \${name} này?`;
+        saveCategoryConfirmModal.show();
+      }
+
       function saveCategory() {
         const id = document.getElementById("categoryId").value;
         const name = document.getElementById("categoryName").value.trim();
@@ -206,7 +285,9 @@
           .then((res) => res.json())
           .then((result) => {
             if (result.success) {
+              saveCategoryConfirmModal.hide();
               categoryModal.hide();
+              alert(result.message)
               loadData();
             } else {
               alert(result.message);
@@ -244,5 +325,5 @@
       }
     </script>
   </body>
-</html>
 
+  </html>

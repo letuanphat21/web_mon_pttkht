@@ -16,22 +16,40 @@ public class VerifyCodeController extends HttpServlet {
     public void init() {
         authService = new AuthService();
     }
+
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         String code = request.getParameter("code");
         String email = request.getParameter("email");
-        
+
         Result result = authService.activeUser(email, code);
-        if (result.isSuccess()) {
-            request.setAttribute("message", result.getMessage());
-        }else {
-            request.setAttribute("message", result.getMessage());
+
+        request.setAttribute("message", result.getMessage());
+
+        if (result.isExpired()) {
+            request.setAttribute("isExpired", true);
+            request.setAttribute("email", email);
         }
+
         request.getRequestDispatcher("/WEB-INF/success.jsp").forward(request, response);
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String email = request.getParameter("email");
 
+        Result result = authService.resendActivationCode(email);
+
+        request.setAttribute("message", result.getMessage());
+
+        // Nếu vẫn thất bại (không phải hết hạn), cho phép thử lại
+        if (!result.isSuccess()) {
+            request.setAttribute("isExpired", true);
+            request.setAttribute("email", email);
+        }
+
+        request.getRequestDispatcher("/WEB-INF/success.jsp").forward(request, response);
     }
 }
