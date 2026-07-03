@@ -1,6 +1,7 @@
 package org.example.webquanao.dao;
 
 import org.example.webquanao.db.DBConnect;
+import org.example.webquanao.entity.Cart;
 import org.example.webquanao.entity.CartItem;
 import org.example.webquanao.entity.Product;
 import org.jdbi.v3.core.Jdbi;
@@ -34,7 +35,12 @@ public class CartDAO {
 
                             CartItem cartItem = new CartItem();
                             cartItem.setId(rs.getInt("item_id"));
-                            cartItem.setCartId(rs.getInt("cart_id"));
+
+                            // Thiết lập đối tượng Cart cho CartItem
+                            Cart cart = new Cart();
+                            cart.setId(rs.getInt("cart_id"));
+                            cartItem.setCart(cart);
+
                             cartItem.setProduct(product);
                             cartItem.setQuantity(rs.getInt("cart_qty"));
                             cartItem.setSelected(rs.getBoolean("is_selected"));
@@ -47,24 +53,22 @@ public class CartDAO {
     }
 
     public boolean deleteCartItem(int cartId, int productId) {
-        int rows = getJdbi().withHandle(handle ->
+        return getJdbi().withHandle(handle ->
                 handle.createUpdate("DELETE FROM cart_items WHERE cart_id = :cartId AND product_id = :productId")
                         .bind("cartId", cartId)
                         .bind("productId", productId)
                         .execute()
-        );
-        return rows > 0;
+        ) > 0;
     }
 
     public boolean updateItemSelection(int cartId, int productId, boolean isSelected) {
-        int rows = getJdbi().withHandle(handle ->
+        return getJdbi().withHandle(handle ->
                 handle.createUpdate("UPDATE cart_items SET is_selected = :isSelected WHERE cart_id = :cartId AND product_id = :productId")
                         .bind("isSelected", isSelected ? 1 : 0)
                         .bind("cartId", cartId)
                         .bind("productId", productId)
                         .execute()
-        );
-        return rows > 0;
+        ) > 0;
     }
 
     public CartItem checkUserCart(int userId, int productId) {
@@ -88,7 +92,10 @@ public class CartDAO {
 
                             CartItem cartItem = new CartItem();
                             cartItem.setId(rs.getInt("item_id"));
-                            cartItem.setCartId(rs.getInt("cart_id"));
+                            Cart cart = new Cart();
+                            cart.setId(rs.getInt("cart_id"));
+                            cartItem.setCart(cart);
+
                             cartItem.setProduct(product);
                             cartItem.setQuantity(rs.getInt("cart_qty"));
                             cartItem.setSelected(rs.getBoolean("is_selected"));
@@ -110,9 +117,7 @@ public class CartDAO {
                         .orElse(null)
         );
 
-        if (cartId != null) {
-            return cartId;
-        }
+        if (cartId != null) return cartId;
 
         return getJdbi().withHandle(handle ->
                 handle.createUpdate("INSERT INTO carts (user_id) VALUES (:userId)")
@@ -125,14 +130,13 @@ public class CartDAO {
 
     public boolean insertCartItem(int cartId, int productId, int quantity) {
         try {
-            int rows = getJdbi().withHandle(handle ->
+            return getJdbi().withHandle(handle ->
                     handle.createUpdate("INSERT INTO cart_items (cart_id, product_id, quantity, is_selected) VALUES (:cartId, :productId, :quantity, 1)")
                             .bind("cartId", cartId)
                             .bind("productId", productId)
                             .bind("quantity", quantity)
                             .execute()
-            );
-            return rows > 0;
+            ) > 0;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -140,14 +144,13 @@ public class CartDAO {
     }
 
     public boolean updateCartItemQuantity(int cartId, int productId, int newQuantity) {
-        int rows = getJdbi().withHandle(handle ->
+        return getJdbi().withHandle(handle ->
                 handle.createUpdate("UPDATE cart_items SET quantity = :newQuantity WHERE cart_id = :cartId AND product_id = :productId")
                         .bind("newQuantity", newQuantity)
                         .bind("cartId", cartId)
                         .bind("productId", productId)
                         .execute()
-        );
-        return rows > 0;
+        ) > 0;
     }
 
     public int getTotalCartCount(int userId) {

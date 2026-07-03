@@ -21,7 +21,7 @@
     ${message}
 </p>
 
-<form action="login" method="post">
+<form action="${pageContext.request.contextPath}/login" method="post">
 
     <p>Tài khoản</p>
     <input type="email" name="email" placeholder="Nhập email" required />

@@ -2,6 +2,7 @@ package org.example.webquanao.controller;
 
 import com.google.gson.JsonObject;
 import org.example.webquanao.dto.response.CartPageResponse;
+import org.example.webquanao.entity.User;
 import org.example.webquanao.service.CartService;
 
 import jakarta.servlet.ServletException;
@@ -22,15 +23,14 @@ public class ManageCartController extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession();
-        Integer userId = (Integer) session.getAttribute("userId");
+        User user = (User) session.getAttribute("user");
 
         try {
             // Bước 2: Gọi Service đọc dữ liệu phân nhánh Guest/User và đóng gói vào DTO
-            CartPageResponse cartPageData = cartService.getCartPageDetails(userId, session);
+            CartPageResponse cartPageData = cartService.getCartPageDetails(user, session);
 
-            // CODE SỬA BUG: Đọc lại tổng số lượng thực tế từ DB để đồng bộ lên Badge Header
-            if (userId != null) {
-                int totalCartCount = cartService.getTotalCartCount(userId);
+            if (user != null) {
+                int totalCartCount = cartService.getTotalCartCount(user.getId());
                 session.setAttribute("totalCartCount", totalCartCount);
             }
 
@@ -52,7 +52,7 @@ public class ManageCartController extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
 
         HttpSession session = request.getSession();
-        Integer userId = (Integer) session.getAttribute("userId");
+        User user = (User) session.getAttribute("user");
 
         String action = request.getParameter("action");
         String queryType = request.getParameter("queryType");
@@ -63,7 +63,7 @@ public class ManageCartController extends HttpServlet {
         try {
 
             if ("checkAuth".equals(queryType)) {
-                if (userId == null) {
+                if (user == null) {
                     // Trạng thái Guest -> Trả về cờ báo bắt buộc chuyển hướng đăng nhập
                     jsonResponse.addProperty("isGuest", true);
                 } else {
@@ -103,7 +103,7 @@ public class ManageCartController extends HttpServlet {
             switch (action) {
                 // Luồng 6b: Xóa sản phẩm khỏi bộ lưu trữ
                 case "DELETE":
-                    double totalAfterDelete = cartService.removeItemFromCart(userId, session, productId);
+                    double totalAfterDelete = cartService.removeItemFromCart(user, session, productId);
 
                     jsonResponse.addProperty("success", true);
                     jsonResponse.addProperty("newTotal", totalAfterDelete);
@@ -113,7 +113,7 @@ public class ManageCartController extends HttpServlet {
                 case "UPDATE":
                     int newQty = Integer.parseInt(request.getParameter("newQty"));
 
-                    var calculation = cartService.updateItemQuantity(userId, session, productId, newQty);
+                    var calculation = cartService.updateItemQuantity(user, session, productId, newQty);
 
                     jsonResponse.addProperty("success", true);
                     jsonResponse.addProperty("itemTotal", calculation.getItemTotal());
@@ -124,7 +124,7 @@ public class ManageCartController extends HttpServlet {
                 case "SELECT":
                     boolean isChecked = Boolean.parseBoolean(request.getParameter("isChecked"));
 
-                    double selectedTotal = cartService.toggleItemSelection(userId, session, productId, isChecked);
+                    double selectedTotal = cartService.toggleItemSelection(user, session, productId, isChecked);
 
                     jsonResponse.addProperty("success", true);
                     jsonResponse.addProperty("cartTotal", selectedTotal);

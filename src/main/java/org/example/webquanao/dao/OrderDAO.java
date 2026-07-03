@@ -3,7 +3,14 @@ package org.example.webquanao.dao;
 import org.example.webquanao.db.DBConnect;
 import org.example.webquanao.entity.Order;
 import org.example.webquanao.entity.OrderDetail;
+import org.example.webquanao.entity.Product;
+import org.example.webquanao.entity.User;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.mapper.RowMapper;
+import org.jdbi.v3.core.statement.StatementContext;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -15,32 +22,77 @@ public class OrderDAO {
         return jdbi;
     }
 
-    /**
-     * Chèn đơn hàng và đồng thời trừ tồn kho trong cùng một Transaction
-     */
+    private static class OrderMapper implements RowMapper<Order> {
+        @Override
+        public Order map(ResultSet rs, StatementContext ctx) throws SQLException {
+            Order order = new Order();
+            order.setOrderId(rs.getString("order_id"));
+            order.setFullName(rs.getString("full_name"));
+            order.setPhone(rs.getString("phone"));
+            order.setAddress(rs.getString("address"));
+            order.setTotalPrice(rs.getDouble("total_price"));
+            order.setStatus(rs.getString("status"));
+
+            User user = new User();
+            user.setId(rs.getInt("user_id"));
+            order.setUser(user);
+            return order;
+        }
+    }
+
+    private static class OrderDetailMapper implements RowMapper<OrderDetail> {
+        @Override
+        public OrderDetail map(ResultSet rs, StatementContext ctx) throws SQLException {
+            OrderDetail detail = new OrderDetail();
+            detail.setId(rs.getInt("id"));
+            detail.setQuantity(rs.getInt("quantity"));
+            detail.setPrice(rs.getDouble("price"));
+
+            Order order = new Order();
+            order.setOrderId(rs.getString("order_id"));
+            detail.setOrder(order);
+
+            Product product = new Product();
+            product.setProductId(rs.getInt("product_id"));
+            detail.setProduct(product);
+
+            return detail;
+        }
+    }
+
     public boolean insertOrder(Order order, List<OrderDetail> details) {
         try {
             getJdbi().useTransaction(handle -> {
                 handle.createUpdate("INSERT INTO orders (order_id, user_id, full_name, phone, address, total_price, status) " +
                                 "VALUES (:orderId, :userId, :fullName, :phone, :address, :totalPrice, :status)")
-                        .bindBean(order)
+                        .bind("orderId", order.getOrderId())
+                        .bind("userId", order.getUser().getId())
+                        .bind("fullName", order.getFullName())
+                        .bind("phone", order.getPhone())
+                        .bind("address", order.getAddress())
+                        .bind("totalPrice", order.getTotalPrice())
+                        .bind("status", order.getStatus())
                         .execute();
 
                 var preparedBatch = handle.prepareBatch("INSERT INTO order_details (order_id, product_id, quantity, price) " +
                         "VALUES (:orderId, :productId, :quantity, :price)");
 
                 for (OrderDetail item : details) {
-                    preparedBatch.bindBean(item).add();
+                    preparedBatch.bind("orderId", item.getOrder().getOrderId())
+                            .bind("productId", item.getProduct().getProductId())
+                            .bind("quantity", item.getQuantity())
+                            .bind("price", item.getPrice())
+                            .add();
                 }
                 preparedBatch.execute();
 
                 for (OrderDetail item : details) {
                     int updatedRows = handle.createUpdate("UPDATE products SET quantity = quantity - :qty WHERE productId = :pid AND quantity >= :qty")
                             .bind("qty", item.getQuantity())
-                            .bind("pid", item.getProductId())
+                            .bind("pid", item.getProduct().getProductId())
                             .execute();
                     if (updatedRows == 0) {
-                        throw new RuntimeException("Sản phẩm ID " + item.getProductId() + " không đủ tồn kho!");
+                        throw new RuntimeException("Sản phẩm " + item.getProduct().getProductName() + " không đủ tồn kho!");
                     }
                 }
             });
@@ -55,7 +107,7 @@ public class OrderDAO {
         return getJdbi().withHandle(handle ->
                 handle.createQuery("SELECT * FROM orders WHERE order_id = :id")
                         .bind("id", orderId)
-                        .map(org.jdbi.v3.core.mapper.reflect.BeanMapper.of(Order.class))
+                        .map(new OrderMapper())
                         .findOne()
                         .orElse(null)
         );
@@ -65,7 +117,7 @@ public class OrderDAO {
         return getJdbi().withHandle(handle ->
                 handle.createQuery("SELECT * FROM orders WHERE user_id = :userId ORDER BY created_at DESC")
                         .bind("userId", userId)
-                        .map(org.jdbi.v3.core.mapper.reflect.BeanMapper.of(Order.class))
+                        .map(new OrderMapper())
                         .list()
         );
     }
@@ -74,7 +126,7 @@ public class OrderDAO {
         return getJdbi().withHandle(handle ->
                 handle.createQuery("SELECT * FROM order_details WHERE order_id = :orderId")
                         .bind("orderId", orderId)
-                        .map(org.jdbi.v3.core.mapper.reflect.BeanMapper.of(OrderDetail.class))
+                        .map(new OrderDetailMapper())
                         .list()
         );
     }
@@ -109,7 +161,7 @@ public class OrderDAO {
                 for (OrderDetail item : details) {
                     handle.createUpdate("UPDATE products SET quantity = quantity + :qty WHERE productId = :pid")
                             .bind("qty", item.getQuantity())
-                            .bind("pid", item.getProductId())
+                            .bind("pid", item.getProduct().getProductId())
                             .execute();
                 }
             });
@@ -123,7 +175,7 @@ public class OrderDAO {
     public List<Order> selectAllOrders() {
         return getJdbi().withHandle(handle ->
                 handle.createQuery("SELECT * FROM orders ORDER BY created_at DESC")
-                        .map(org.jdbi.v3.core.mapper.reflect.BeanMapper.of(Order.class))
+                        .map(new OrderMapper())
                         .list()
         );
     }

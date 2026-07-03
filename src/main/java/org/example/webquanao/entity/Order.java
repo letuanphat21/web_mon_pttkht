@@ -6,22 +6,22 @@ import java.util.List;
 
 public class Order {
     private String orderId;
-    private int userId;
+    private User user;
     private String fullName;
     private String phone;
     private String address;
     private double totalPrice;
     private String status;
     private Timestamp createdAt;
-
     private String cancelReason;
+
     private List<OrderDetail> orderDetails = new ArrayList<>();
 
     public Order() {}
 
-    public Order(String orderId, int userId, String fullName, String phone, String address, double totalPrice) {
+    public Order(String orderId, User user, String fullName, String phone, String address, double totalPrice) {
         this.orderId = orderId;
-        this.userId = userId;
+        this.user = user;
         this.fullName = fullName;
         this.phone = phone;
         this.address = address;
@@ -32,8 +32,12 @@ public class Order {
     public String getOrderId() { return orderId; }
     public void setOrderId(String orderId) { this.orderId = orderId; }
 
-    public int getUserId() { return userId; }
-    public void setUserId(int userId) { this.userId = userId; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+
+    public int getUserId() {
+        return (user != null) ? user.getId() : 0;
+    }
 
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }

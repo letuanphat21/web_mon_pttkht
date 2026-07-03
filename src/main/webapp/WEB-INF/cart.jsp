@@ -115,18 +115,18 @@
                             <div class="mb-3">
                                 <label for="fullName" class="form-label fw-bold">Họ và tên người nhận</label>
                                 <input type="text" class="form-control" name="fullName"
-                                       value="${not empty requestScope.pendingOrder ? requestScope.pendingOrder.fullName : sessionScope.username}" required>
+                                       value="${not empty pendingOrder.fullName ? pendingOrder.fullName : sessionScope.checkoutShipping.fullName}" required>
                             </div>
 
                             <div class="mb-3">
                                 <label for="phone" class="form-label fw-bold">Số điện thoại</label>
                                 <input type="text" class="form-control" name="phone"
-                                       value="${not empty requestScope.pendingOrder ? requestScope.pendingOrder.phone : ''}" required>
+                                       value="${not empty pendingOrder.phone ? pendingOrder.phone : sessionScope.checkoutShipping.phone}" required>
                             </div>
 
                             <div class="mb-3">
                                 <label for="address" class="form-label fw-bold">Địa chỉ giao hàng</label>
-                                <textarea class="form-control" name="address" rows="3" required>${not empty requestScope.pendingOrder ? requestScope.pendingOrder.address : ''}</textarea>
+                                <textarea class="form-control" name="address" rows="3" required>${not empty pendingOrder.address ? pendingOrder.address : sessionScope.checkoutShipping.address}</textarea>
                             </div>
 
                             <div class="mt-4 d-grid gap-2">

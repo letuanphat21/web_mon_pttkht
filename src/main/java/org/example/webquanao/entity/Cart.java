@@ -1,12 +1,15 @@
 package org.example.webquanao.entity;
 
+import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Cart {
+public class Cart implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private int id;
-    private int userId;
+    private User user;
     private Timestamp createdAt;
     private Timestamp updatedAt;
     private Map<Integer, CartItem> items;
@@ -17,16 +20,16 @@ public class Cart {
         this.grandTotal = 0.0;
     }
 
-    public Cart(int id, int userId) {
+    public Cart(int id, User user) {
         this.id = id;
-        this.userId = userId;
+        this.user = user;
         this.items = new HashMap<>();
         this.grandTotal = 0.0;
     }
 
     public void addCartItem(CartItem item) {
         if (item != null && item.getProduct() != null) {
-            item.setCartId(this.id);
+            item.setCart(this);
             this.items.put(item.getProduct().getProductId(), item);
             this.recalculateTotal();
         }
@@ -51,8 +54,8 @@ public class Cart {
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
-    public int getUserId() { return userId; }
-    public void setUserId(int userId) { this.userId = userId; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }

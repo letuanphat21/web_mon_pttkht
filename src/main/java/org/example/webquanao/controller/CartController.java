@@ -24,18 +24,14 @@ public class CartController extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
 
         try {
-            //  Tiếp nhận thông tin qua fetch gửi lên từ cart.js
             int productId = Integer.parseInt(request.getParameter("productId"));
             int quantity = Integer.parseInt(request.getParameter("quantity"));
 
-            // Đóng gói dữ liệu đầu vào thông qua Request DTO
             AddToCartRequest reqAdd = new AddToCartRequest(productId, quantity);
             HttpSession session = request.getSession();
 
-            // Gọi tầng Service xử lý nghiệp vụ chính
             Object serviceResult = cartService.addToCart(reqAdd, session);
 
-            // Kiểm tra phân nhánh kết quả trả về từ Service
             if (serviceResult instanceof String) {
                 String status = (String) serviceResult;
                 response.setStatus(400);

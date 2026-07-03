@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpSession;
 import org.example.webquanao.dto.request.CheckoutRequest;
 import org.example.webquanao.dto.response.CartPageResponse;
 import org.example.webquanao.dto.response.OrderResponse;
+import org.example.webquanao.entity.User;
 import org.example.webquanao.service.OrderService;
 import org.example.webquanao.service.CartService;
 import org.example.webquanao.service.UserService;
@@ -27,26 +28,38 @@ public class OrderController extends HttpServlet {
             throws ServletException, IOException {
 
         String action = request.getParameter("action");
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
 
         if ("editShipping".equals(action)) {
-            Integer userId = (Integer) request.getSession().getAttribute("userId");
-            request.setAttribute("cartData", cartService.getCartPageDetails(userId, request.getSession()));
+            CheckoutRequest shippingInfo = (CheckoutRequest) session.getAttribute("checkoutShipping");
+            if (shippingInfo != null) {
+                request.setAttribute("pendingOrder", shippingInfo);
+            }
+
+            request.setAttribute("cartData", cartService.getCartPageDetails(user, request.getSession()));
             request.setAttribute("openOrderForm", true);
-
             request.getRequestDispatcher("/WEB-INF/cart.jsp").forward(request, response);
-
         } else if ("returnToCart".equals(action)) {
             // Luồng 14b2: Điều hướng nz`gười dùng quay về bước 3 (Giỏ hàng ban đầu)
             response.sendRedirect(request.getContextPath() + "/cart");
 
         } else if ("review".equals(action)) {
-            // Hiển thị giao diện kiểm tra thông tin Review đơn hàng
             try {
                 showReviewPage(request, response);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
 
+        } else if ("backToCart".equals(action)) {
+            CheckoutRequest shipping = (CheckoutRequest) session.getAttribute("checkoutShipping");
+            if (shipping != null) {
+                request.setAttribute("pendingOrder", shipping);
+            }
+
+            request.setAttribute("cartData", cartService.getCartPageDetails(user, session));
+            request.setAttribute("openOrderForm", true);
+            request.getRequestDispatcher("/WEB-INF/cart.jsp").forward(request, response);
         } else {
             response.sendRedirect(request.getContextPath() + "/cart");
         }
@@ -58,13 +71,11 @@ public class OrderController extends HttpServlet {
 
         request.setCharacterEncoding("UTF-8");
         HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
 
-        System.out.println("DEBUG - checkoutCart: " + session.getAttribute("checkoutCart"));
-        System.out.println("DEBUG - checkoutShipping: " + session.getAttribute("checkoutShipping"));
         Integer userId = (Integer) session.getAttribute("userId");
 
-        // PRE-CONDITION: User đã đăng nhập thành công
-        if (userId == null) {
+        if (user == null) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
@@ -73,8 +84,7 @@ public class OrderController extends HttpServlet {
         // LUỒNG 5 -> 8: KIỂM TRA & KHỞI TẠO ĐẶT HÀNG (Nhấn Đặt hàng tại cart.jsp)
         if ("proceedToCheckout".equals(action)) {
             try {
-                // LUÔN LẤY DỮ LIỆU MỚI TỪ DB
-                CartPageResponse resCartCheck = cartService.getSelectedItemsCart(userId);
+                CartPageResponse resCartCheck = cartService.getSelectedItemsCart(user);
 
                 if (resCartCheck == null || resCartCheck.getCartItems().isEmpty()) {
                     request.setAttribute("error_msg", "Giỏ hàng trống!");
@@ -105,7 +115,7 @@ public class OrderController extends HttpServlet {
                     request.setAttribute("openOrderForm", true);
                 }
 
-                request.setAttribute("cartData", cartService.getCartPageDetails(userId, session));
+                request.setAttribute("cartData", cartService.getCartPageDetails(user, session));
                 request.getRequestDispatcher("/WEB-INF/cart.jsp").forward(request, response);
 
             } catch (Exception e) {
@@ -116,11 +126,10 @@ public class OrderController extends HttpServlet {
 
         // LUỒNG 9 -> 13: NHẬP LIỆU VÀ KIỂM TRA THÔNG TIN (Nhấn "Tiếp theo")
         else if ("validateShipping".equals(action)) {
-            // CƠ CHẾ TỰ HỒI PHỤC: Nếu Session mất checkoutCart, nạp lại từ DB
             CartPageResponse cartResponse = (CartPageResponse) session.getAttribute("checkoutCart");
             if (cartResponse == null) {
                 try {
-                    cartResponse = cartService.getSelectedItemsCart(userId);
+                    cartResponse = cartService.getSelectedItemsCart(user);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -138,7 +147,7 @@ public class OrderController extends HttpServlet {
                 request.setAttribute("validationErrors", errors);
                 request.setAttribute("pendingOrder", reqCheckout);
                 request.setAttribute("openOrderForm", true);
-                request.setAttribute("cartData", cartService.getCartPageDetails(userId, session));
+                request.setAttribute("cartData", cartService.getCartPageDetails(user, session));
                 request.getRequestDispatcher("/WEB-INF/cart.jsp").forward(request, response);
                 return;
             }
@@ -163,21 +172,17 @@ public class OrderController extends HttpServlet {
                     return;
                 }
 
-                // LƯU Ý: Tạo lập đơn hàng hoàn chỉnh với trạng thái "Chờ xác nhận" vào Database trước
-                OrderResponse orderResponse = orderService.createOrder(userId, cartResponse, checkoutRequest);
+                OrderResponse orderResponse = orderService.createOrder(user, cartResponse, checkoutRequest);
 
                 if (orderResponse == null) {
-                    System.out.println("-> LOI: Khong tao duoc don hang o tang DB");
                     request.setAttribute("error_msg", "Hệ thống bận, không thể tạo đơn hàng. Vui lòng thử lại!");
                     request.getRequestDispatcher("/WEB-INF/cart.jsp").forward(request, response);
                     return;
                 }
 
-                // Đóng gói thông tin đơn hàng vừa tạo vào Session để chuyển quyền xử lý sang PaymentController
                 session.setAttribute("pendingOrder", orderResponse);
 
                 System.out.println("-> Đã tạo đơn hàng thành công. Chuyển hướng sang trang chọn PTTT...");
-                // Điều hướng sang PaymentController (để chạy luồng hiển thị chọn phương thức thanh toán)
                 response.sendRedirect(request.getContextPath() + "/payment");
 
             } catch (Exception e) {
@@ -185,35 +190,18 @@ public class OrderController extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/cart");
             }
         }
-       /*
-        else if ("processPayment".equals(action)) {
-            // 1. Lấy dữ liệu từ session
-            CartPageResponse cart = (CartPageResponse) session.getAttribute("checkoutCart");
-            CheckoutRequest shipping = (CheckoutRequest) session.getAttribute("checkoutShipping");
-            String paymentMethod = request.getParameter("paymentMethod");
-
-            // 2. Gọi service thanh toán (do bạn của bạn làm)
-            boolean isPaid = paymentService.process(paymentMethod, cart.getTotalAmount());
-
-            if (isPaid) {
-                // 3. THANH TOÁN THÀNH CÔNG -> MỚI TẠO ĐƠN HÀNG
-                OrderResponse order = orderService.createOrder(userId, cart, shipping);
-                cartService.clearPurchasedItems(userId, cart);
-                session.removeAttribute("checkoutCart");
-                session.removeAttribute("checkoutShipping");
-                // Chuyển sang trang đặt hàng thành công
-            } else {
-                // Báo lỗi thanh toán
-            }
-        }*/
     }
 
     private void showReviewPage(HttpServletRequest request, HttpServletResponse response)
             throws Exception {
         HttpSession session = request.getSession();
-        Integer userId = (Integer) session.getAttribute("userId");
+        User user = (User) session.getAttribute("user");
+        if (session.getAttribute("checkoutShipping") == null) {
+            response.sendRedirect(request.getContextPath() + "/cart");
+            return;
+        }
 
-        CartPageResponse freshCart = cartService.getSelectedItemsCart(userId);
+        CartPageResponse freshCart = cartService.getSelectedItemsCart(user);
 
         if (freshCart == null || freshCart.getCartItems().isEmpty()) {
             session.removeAttribute("checkoutCart");

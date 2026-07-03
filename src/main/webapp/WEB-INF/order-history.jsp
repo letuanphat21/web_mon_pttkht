@@ -112,7 +112,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-danger" onclick="submitCancel()">Xác nhận hủy Ajax</button>
+                <button type="button" class="btn btn-danger" onclick="submitCancel()">Xác nhận hủy</button>
             </div>
         </div>
     </div>
