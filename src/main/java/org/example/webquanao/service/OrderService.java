@@ -131,17 +131,24 @@ public class OrderService {
         if (order == null) return null;
 
         OrderHistoryResponse response = new OrderHistoryResponse(order);
-        List<OrderDetail> details = orderDAO.getDetailsByOrderId(orderId);
+        List<Map<String, Object>> details = orderDAO.getDetailsWithProductInfo(orderId);
         List<OrderDetailHistoryResponse> detailDTOs = new ArrayList<>();
 
-        // Map Entity Detail sang DTO Detail (kèm thông tin sản phẩm)
-        for (OrderDetail detail : details) {
-            OrderDetailHistoryResponse dto = new OrderDetailHistoryResponse(
-                    detail.getProductId(), "Tên sản phẩm", "Ảnh", // Bạn cần truyền data thực từ DB
-                    detail.getQuantity(), detail.getPrice()
-            );
+        for (Map<String, Object> item : details) {
+            Object rawName = item.get("productName") != null ? item.get("productName") : item.get("productname");
+            String pName = (rawName != null) ? String.valueOf(rawName) : "Không xác định";
+
+            Object rawImg = item.get("productImage") != null ? item.get("productImage") : item.get("productimage");
+            String pImage = (rawImg != null) ? String.valueOf(rawImg) : "";
+
+            int pId = ((Number) item.get("product_id")).intValue();
+            int qty = ((Number) item.get("quantity")).intValue();
+            double price = ((Number) item.get("price")).doubleValue();
+
+            OrderDetailHistoryResponse dto = new OrderDetailHistoryResponse(pId, pName, pImage, qty, price);
             detailDTOs.add(dto);
         }
+
         response.setOrderDetails(detailDTOs);
         return response;
     }
@@ -218,26 +225,21 @@ public class OrderService {
 
             case "Đã giao":
             case "Đã hủy":
-                // Trạng thái cuối (End State) -> Không được phép thay đổi đi đâu nữa
                 isValidTransition = false;
                 break;
         }
 
         // 3. Thực thi cập nhật nếu luồng chuyển đổi hợp lệ
         if (isValidTransition) {
-            // Nếu Admin chọn hủy đơn hàng ở bất kỳ giai đoạn nào, nên chạy qua nghiệp vụ hoàn kho của bạn
             if ("Đã hủy".equals(nextStatus)) {
-                List<OrderDetail> details = orderDAO.getDetailsByOrderId(request.getOrderId());
-                boolean success = orderDAO.cancelOrderTransaction(request.getOrderId(), "Admin thay đổi trạng thái thành Hủy", details);
-                return success ? "SUCCESS" : "ERROR_SYSTEM";
+                return processCancelOrderForAdmin(request.getOrderId(), "Admin cập nhật trạng thái");
             }
 
-            // Các trạng thái thông thường: Cập nhật trực tiếp chuỗi vào DB
             boolean success = orderDAO.updateStatus(request.getOrderId(), nextStatus);
             return success ? "SUCCESS" : "ERROR_SYSTEM";
         }
 
-        return "INVALID_TRANSITION"; // Trả về mã lỗi nếu chuyển trạng thái sai quy trình (Vd: Từ Chờ xác nhận nhảy thẳng lên Đã giao)
+        return "INVALID_TRANSITION";
     }
 
     public OrderHistoryResponse getOrderDetailsForAdmin(String orderId) {
@@ -267,18 +269,15 @@ public class OrderService {
     }
 
     public String processCancelOrderForAdmin(String orderId, String reason) {
-        // 1. Chỉ kiểm tra đơn hàng có tồn tại hay không
         Order order = orderDAO.findById(orderId);
         if (order == null) {
             return "ERROR_NOT_FOUND";
         }
 
-        // 2. Kiểm tra trạng thái
-        if (!"Chờ xác nhận".equals(order.getStatus())) {
+        if ("Đã hủy".equals(order.getStatus())) {
             return "ERROR_INVALID_STATUS";
         }
 
-        // 3. Thực hiện hủy đơn và hoàn trả kho
         List<OrderDetail> details = orderDAO.getDetailsByOrderId(orderId);
         boolean success = orderDAO.cancelOrderTransaction(orderId, reason, details);
 

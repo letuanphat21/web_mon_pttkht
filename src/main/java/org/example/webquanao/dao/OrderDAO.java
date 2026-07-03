@@ -15,6 +15,9 @@ public class OrderDAO {
         return jdbi;
     }
 
+    /**
+     * Chèn đơn hàng và đồng thời trừ tồn kho trong cùng một Transaction
+     */
     public boolean insertOrder(Order order, List<OrderDetail> details) {
         try {
             getJdbi().useTransaction(handle -> {
@@ -29,8 +32,17 @@ public class OrderDAO {
                 for (OrderDetail item : details) {
                     preparedBatch.bindBean(item).add();
                 }
-
                 preparedBatch.execute();
+
+                for (OrderDetail item : details) {
+                    int updatedRows = handle.createUpdate("UPDATE products SET quantity = quantity - :qty WHERE productId = :pid AND quantity >= :qty")
+                            .bind("qty", item.getQuantity())
+                            .bind("pid", item.getProductId())
+                            .execute();
+                    if (updatedRows == 0) {
+                        throw new RuntimeException("Sản phẩm ID " + item.getProductId() + " không đủ tồn kho!");
+                    }
+                }
             });
             return true;
         } catch (Exception e) {

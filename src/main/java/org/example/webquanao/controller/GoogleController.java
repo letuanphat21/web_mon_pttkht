@@ -12,6 +12,7 @@ import org.example.webquanao.entity.Role;
 import org.example.webquanao.entity.User;
 import org.example.webquanao.helper.HttpClientHelper;
 import org.example.webquanao.service.AuthService;
+import org.example.webquanao.service.CartService;
 import org.example.webquanao.utils.GoogleProperties;
 
 import java.io.IOException;
@@ -20,10 +21,12 @@ import java.util.List;
 @WebServlet(name = "GoogleController", value = "/loginGoogle")
 public class GoogleController extends HttpServlet {
     private AuthService authService;
+    private CartService cartService;
 
     @Override
     public void init() {
         authService = new AuthService();
+        cartService = new CartService();
     }
 
     @Override
@@ -77,11 +80,21 @@ public class GoogleController extends HttpServlet {
                         .map(Role::getName)
                         .toList());
 
+                try {
+                    cartService.mergeCartOnLogin(userId, session);
+
+                    int totalCartCount = cartService.getTotalCartCount(userId);
+                    session.setAttribute("totalCartCount", totalCartCount);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
                 boolean isAdmin = roles.stream()
                         .anyMatch(role -> "ADMIN".equals(role.getName()));
                 if (isAdmin) {
                     session.setAttribute("roleId", 2);
                 }
+
 
                 response.sendRedirect(request.getContextPath()
                         + (isAdmin ? "/admin/dashboard" : "/"));
@@ -98,6 +111,7 @@ public class GoogleController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        System.out.println("DEBUG [GoogleController]: Request POST đã vào!");
 
     }
 }
